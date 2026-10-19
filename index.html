@@ -95,45 +95,36 @@
                 
                 <div class="flex flex-col gap-3 mt-4">
                     <button class="btn bg-blue-500 shadow-[0_6px_0_#1e3a8a]" onclick="showHostMenu()">Oda Kur</button>
-                    <button class="btn bg-green-500 shadow-[0_6px_0_#14532d]" onclick="showJoinMenu()">Odalara Katıl</button>
+                    <button class="btn bg-green-500 shadow-[0_6px_0_#14532d]" onclick="showJoinMenu()">Odaya Katıl</button>
                 </div>
                 <button class="text-white/60 underline font-bold mt-6 text-sm w-full text-center" onclick="startSolo()">Tek Kişilik Oyna</button>
             </div>
-            <p id="auth-status" class="text-white/50 text-xs mt-4">Sunucuya bağlanılıyor...</p>
         </div>
 
         <!-- 2. Host Room Screen -->
         <div class="screen" id="screen-host">
             <h2 class="text-3xl font-black text-white mb-6">Oda Kur</h2>
-            <div class="bg-white/10 p-6 rounded-3xl border border-white/20 w-80">
-                <input type="text" id="host-room-name" placeholder="Oda Adı" class="input-field">
-                <input type="text" id="host-room-pass" placeholder="Şifre (Zorunlu)" class="input-field">
-                
-                <button class="btn bg-blue-500 shadow-[0_6px_0_#1e3a8a] mt-4" onclick="createRoom()">Odayı Aç</button>
-                <button class="btn bg-gray-500 shadow-[0_4px_0_#374151] mt-3" onclick="setScreen('screen-start')">İptal</button>
+            <div class="bg-white/20 p-6 rounded-3xl border border-white/30 text-center w-80 backdrop-blur-sm">
+                <p class="text-white/80 text-sm font-bold mb-2">Arkadaşına bu kodu ver:</p>
+                <h3 id="host-room-code" class="text-5xl font-black text-yellow-400 tracking-widest mb-4 drop-shadow-md">...</h3>
+                <div id="host-capacity" class="bg-black/30 rounded-full py-2 px-4 inline-block text-white font-bold mb-4">
+                    Oyuncu: 1/2
+                </div>
+                <button id="btn-start-mp" class="btn bg-green-500 shadow-[0_6px_0_#166534] mt-2 w-full hidden" onclick="startMultiplayer()">Oyunu Başlat!</button>
+                <button class="btn bg-gray-500 shadow-[0_4px_0_#374151] mt-3 w-full" onclick="setScreen('screen-start')">İptal</button>
             </div>
-            <div id="fallback-code-container" class="hidden mt-4 bg-white/20 p-4 rounded-xl border border-white/30 text-center w-80 backdrop-blur-sm">
-                <p class="text-white/80 text-sm font-bold">Arkadaşına bu kodu ver:</p>
-                <h3 id="fallback-room-code" class="text-4xl font-black text-yellow-400 tracking-widest mt-2 drop-shadow-md"></h3>
-            </div>
-            <p id="host-status" class="text-yellow-300 mt-4 font-bold text-center h-6"></p>
-            <button id="btn-start-mp" class="btn bg-yellow-400 text-black shadow-[0_6px_0_#a16207] mt-4 w-80 hidden" onclick="startMultiplayer()">Oyunu Başlat!</button>
+            <p id="host-status" class="text-white mt-4 font-bold text-center h-6">Bağlantı bekleniyor...</p>
         </div>
 
         <!-- 3. Join Room Screen -->
         <div class="screen" id="screen-join">
-            <h2 class="text-3xl font-black text-white mb-6">Odalar</h2>
-            <div class="bg-white/10 p-4 rounded-3xl border border-white/20 w-80 h-64 overflow-y-auto" id="room-list">
-                <p class="text-white/50 text-center mt-10">Oda aranıyor...</p>
+            <h2 class="text-3xl font-black text-white mb-6">Odaya Katıl</h2>
+            <div class="bg-white/10 p-6 rounded-3xl border border-white/20 w-80 backdrop-blur-sm">
+                <p class="text-white/80 text-sm font-bold text-center mb-4">4 Haneli Oda Kodunu Gir:</p>
+                <input type="text" id="manual-join-code" placeholder="ÖRN: A1B2" class="input-field !mb-6 uppercase text-3xl tracking-widest text-center" maxlength="4">
+                <button class="btn bg-green-500 shadow-[0_6px_0_#14532d] w-full" onclick="joinByCode()">Katıl</button>
+                <button class="btn bg-gray-500 shadow-[0_4px_0_#374151] mt-3 w-full" onclick="setScreen('screen-start')">Geri Dön</button>
             </div>
-            <div class="bg-white/10 p-4 rounded-3xl border border-white/20 w-80 mt-4 backdrop-blur-sm">
-                <p class="text-white/80 text-sm font-bold text-center mb-2">Veya Kod ile Katıl:</p>
-                <div class="flex gap-2">
-                    <input type="text" id="manual-join-code" placeholder="ÖRN: A1B2" class="input-field !mb-0 uppercase" maxlength="4">
-                    <button class="btn bg-green-500 shadow-[0_4px_0_#14532d] !px-4" onclick="joinByCode()">Katıl</button>
-                </div>
-            </div>
-            <button class="btn bg-gray-500 shadow-[0_4px_0_#374151] mt-4 w-80" onclick="setScreen('screen-start')">Geri Dön</button>
             <p id="join-status" class="text-yellow-300 mt-4 font-bold text-center h-6"></p>
         </div>
 
@@ -150,70 +141,7 @@
         </div>
     </div>
 
-    <!-- Custom Prompt Modal -->
-    <div id="custom-modal">
-        <h3 class="text-xl font-bold text-center mb-4 text-gray-800" id="modal-title">Şifre Girin</h3>
-        <input type="password" id="modal-input" class="input-field !border-gray-300 !mb-4">
-        <div class="flex gap-2">
-            <button class="btn bg-gray-400 !padding-2 w-1/2" onclick="closeModal()">İptal</button>
-            <button class="btn bg-green-500 shadow-[0_4px_0_#166534] w-1/2" onclick="submitModal()">Katıl</button>
-        </div>
-    </div>
-
 <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'mood-run-mp';
-    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-    
-    let db, auth, currentUser;
-    let availableRooms = [];
-    let myRoomDocId = null;
-
-    if (firebaseConfig) {
-        const app = initializeApp(firebaseConfig);
-        auth = getAuth(app);
-        db = getFirestore(app);
-        
-        // Auto Authenticate
-        const token = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-        if (token) {
-            signInWithCustomToken(auth, token).then(res => { currentUser = res.user; listenToRooms(); })
-            .catch(err => console.error(err));
-        } else {
-            signInAnonymously(auth).then(res => { currentUser = res.user; listenToRooms(); })
-            .catch(err => console.error(err));
-        }
-    }
-
-    function listenToRooms() {
-        if (!currentUser) return;
-        document.getElementById('auth-status').innerText = "Bağlantı Hazır ✅";
-        const roomsRef = collection(db, 'artifacts', appId, 'public', 'data', 'rooms');
-        onSnapshot(roomsRef, (snapshot) => {
-            availableRooms = [];
-            snapshot.forEach(doc => availableRooms.push({ id: doc.id, ...doc.data() }));
-            renderRoomList();
-        }, (err) => console.error(err));
-    }
-
-    // Modal Logic
-    let modalCallback = null;
-    window.closeModal = () => { document.getElementById('custom-modal').style.display = 'none'; }
-    window.submitModal = () => {
-        const val = document.getElementById('modal-input').value;
-        closeModal();
-        if(modalCallback) modalCallback(val);
-    }
-    function showPrompt(title, callback) {
-        document.getElementById('modal-title').innerText = title;
-        document.getElementById('modal-input').value = '';
-        document.getElementById('custom-modal').style.display = 'flex';
-        modalCallback = callback;
-    }
-
     const FACES = ['smile', 'neutral', 'sad'];
     const LANE_WIDTH = 3.2; 
     const BOUNDARY = LANE_WIDTH * 1.1; 
@@ -245,52 +173,44 @@
     }
 
     window.showHostMenu = () => {
-        myName = document.getElementById('player-name').value.trim() || "Host";
+        myName = document.getElementById('player-name').value.trim() || "Kurucu";
         updateNameLabel(playerLabel, myName);
         setScreen('screen-host');
+        createRoom();
     }
 
     window.showJoinMenu = () => {
-        myName = document.getElementById('player-name').value.trim() || "Guest";
+        myName = document.getElementById('player-name').value.trim() || "Katılımcı";
         updateNameLabel(playerLabel, myName);
         setScreen('screen-join');
     }
 
     window.createRoom = async () => {
-        const rName = document.getElementById('host-room-name').value.trim();
-        const rPass = document.getElementById('host-room-pass').value.trim();
-        if (!rName || !rPass) return alert("Oda adı ve şifre zorunlu!");
-
+        document.getElementById('host-room-code').innerText = "...";
+        document.getElementById('host-capacity').innerText = "Oyuncu: 1/2";
+        document.getElementById('btn-start-mp').classList.add('hidden');
         document.getElementById('host-status').innerText = "Oda açılıyor...";
+        
         isMultiplayer = true; isHost = true;
         
-        // Dış sunucular için 4 haneli kısa ID oluştur (DB bağımsız)
         const shortCode = Math.random().toString(36).substring(2, 6).toUpperCase();
         const fullPeerId = `moodrun-room-${shortCode}`;
         
+        if(peer) peer.destroy();
         peer = new Peer(fullPeerId);
         
-        peer.on('open', async (id) => {
-            document.getElementById('fallback-code-container').classList.remove('hidden');
-            document.getElementById('fallback-room-code').innerText = shortCode;
-            document.getElementById('host-status').innerText = "Oda Açıldı! Rakip bekleniyor...";
-
-            // Eğer Firebase ortamı aktifse listeye de eklemeyi dene
-            if (currentUser && db) {
-                try {
-                    const roomData = { name: rName, pass: rPass, peerId: id, hostName: myName, time: Date.now() };
-                    const docRef = await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'rooms'), roomData);
-                    myRoomDocId = docRef.id;
-                    window.addEventListener('beforeunload', () => deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', myRoomDocId)));
-                } catch (err) { console.warn("Firebase listeleme yapılamadı, ancak oda kod ile oynanabilir."); }
-            }
+        peer.on('open', (id) => {
+            document.getElementById('host-room-code').innerText = shortCode;
+            document.getElementById('host-status').innerText = "Oda Açıldı! Arkadaşın bekleniyor...";
         });
 
         peer.on('connection', (connection) => {
             conn = connection;
+            document.getElementById('host-capacity').innerText = "Oyuncu: 2/2";
             document.getElementById('host-status').innerText = "Rakip bağlandı! Başlatabilirsin.";
             document.getElementById('btn-start-mp').classList.remove('hidden');
             setupConnectionListeners();
+            conn.on('open', () => conn.send({ type: 'join', name: myName }));
         });
     }
 
@@ -302,43 +222,11 @@
         document.getElementById('join-status').innerText = "Koda bağlanılıyor...";
         const fullPeerId = `moodrun-room-${code}`;
         
-        if(!peer) peer = new Peer();
+        if(peer) peer.destroy();
+        peer = new Peer();
         peer.on('open', () => {
             conn = peer.connect(fullPeerId);
             setupJoinConnection(conn);
-        });
-    }
-
-    function renderRoomList() {
-        const container = document.getElementById('room-list');
-        container.innerHTML = '';
-        if(availableRooms.length === 0) {
-            container.innerHTML = '<p class="text-white/50 text-center mt-10">Açık oda yok.</p>';
-            return;
-        }
-        availableRooms.forEach(room => {
-            const div = document.createElement('div');
-            div.className = 'room-list-item';
-            div.innerHTML = `<span class="text-white font-bold">${room.name}</span><span class="text-white/70 text-sm">Kurucu: ${room.hostName}</span>`;
-            div.onclick = () => handleJoinRoomClick(room);
-            container.appendChild(div);
-        });
-    }
-
-    function handleJoinRoomClick(room) {
-        showPrompt(`${room.name} Şifresi:`, (enteredPass) => {
-            if (enteredPass !== room.pass) {
-                document.getElementById('join-status').innerText = "Hatalı şifre!";
-                return;
-            }
-            document.getElementById('join-status').innerText = "Bağlanılıyor...";
-            isMultiplayer = true; isHost = false;
-            
-            if(!peer) peer = new Peer();
-            peer.on('open', () => {
-                conn = peer.connect(room.peerId);
-                setupJoinConnection(conn);
-            });
         });
     }
 
@@ -363,17 +251,12 @@
                 currentSequenceIndex = 0;
                 
                 if(data.type === 'start') {
-                    // Start of the game
-                    if(isHost && myRoomDocId) {
-                        deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', myRoomDocId)); // Hide room
-                    }
                     resetPlayerAndWorld();
                     setScreen(null);
                     state = 'PLAYING';
                     opponent.position.set(0, 0, 0);
                     oppTargetZ = 0;
                 } else {
-                    // Endless loop continuation received by guest
                     loopCount++;
                     speed += 0.02;
                     spawnMemoryBoard(data.zPos - 80);
@@ -389,13 +272,10 @@
             } else if (data.type === 'gameover') {
                 handleGameOver(data.blame);
             } else if (data.type === 'gate_passed') {
-                // Drop the gate locally since partner passed it
                 const gateToDrop = gates.find(g => g.userData.seqIndex === data.index && !g.userData.passed);
                 if(gateToDrop) {
                     gateToDrop.userData.passed = true;
                     gateToDrop.position.y -= 100;
-                    currentSequenceIndex = Math.max(currentSequenceIndex, data.index + 1);
-                    updateProgressBar();
                 }
             }
         });
@@ -403,11 +283,17 @@
 
     window.startMultiplayer = () => {
         if(!isHost || !conn || !conn.open) return;
-        generateLevelData();
-        conn.send({ type: 'start', level: levelData });
-        resetPlayerAndWorld();
-        setScreen(null);
-        state = 'PLAYING';
+        try {
+            generateLevelData();
+            conn.send({ type: 'start', level: levelData });
+            resetPlayerAndWorld();
+            setScreen(null);
+            state = 'PLAYING';
+            opponent.position.set(0, 0, 0);
+            oppTargetZ = 0;
+        } catch(e) {
+            console.error("Hata: ", e);
+        }
     }
 
     window.startSolo = () => {
