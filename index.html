@@ -1,1131 +1,450 @@
-Sorunun kaynağını buldum ve tamamen çözdüm. Platformun aniden kesilip ekranın kararmasının sebebi, zemini oluşturan 3D modelin karakterle birlikte ilerlememesiydi (Karakter zeminin sonundan düşüyordu). Bunu düzeltmek için zemini karakterin altında sonsuzmuş gibi kaydıran ve takip eden bir sistem kurdum.
-
-Ayrıca karakteri tam olarak gönderdiğin resimlerdeki gibi büyük kafalı, tombul gövdeli, kolsuz/bacaksız (ama animasyonlu uzuvlara sahip) sevimli bir 3D figür haline getirdim. Hızı yavaşlattım ve Lovelo fontunun içini daha dolu göstermek için kalınlaştırma (stroke) ekledim.
-
-İşte test edilmiş, hatasız ve tamamen güncellenmiş kodun:
-
-```html
 <!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mood Run 3D - Colorful Endless</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://unpkg.com/peerjs@1.5.1/dist/peerjs.min.js"></script>
-    <style>
-        @import url('https://fonts.cdnfonts.com/css/lovelo');
-        
-        body, html {
-            margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
-            background-color: #4f46e5; 
-            font-family: 'Lovelo', 'Fredoka One', sans-serif !important;
-            touch-action: none; user-select: none; -webkit-user-select: none;
-        }
-
-        /* Lovelo Fontunu Daha Dolu ve Kalın Gösterme */
-        .game-title, .btn, h1, h2, h3, p, span, div {
-            font-family: 'Lovelo', 'Fredoka One', sans-serif;
-            font-weight: 900;
-            -webkit-text-stroke: 1px rgba(0,0,0,0.1);
-        }
-
-        #game-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
-
-        #ui-layer {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 10; pointer-events: none;
-            display: flex; flex-direction: column; justify-content: space-between;
-        }
-
-        .screen {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(17, 24, 39, 0.85); display: flex; flex-direction: column; 
-            justify-content: center; align-items: center;
-            pointer-events: auto; backdrop-filter: blur(8px);
-            transition: opacity 0.3s; opacity: 0; visibility: hidden;
-        }
-        .screen.active { opacity: 1; visibility: visible; }
-
-        .game-title {
-            text-shadow: 0 4px 10px rgba(0,0,0,0.4), 0 0 20px rgba(255,255,255,0.2);
-            font-size: 3.5rem; line-height: 1.1; text-align: center; color: white;
-        }
-
-        .btn {
-            border: none; color: white; padding: 14px 28px;
-            font-size: 18px; border-radius: 30px; cursor: pointer;
-            transition: transform 0.1s; text-transform: uppercase; pointer-events: auto;
-            width: 100%; text-align: center; display: flex; justify-content: center; align-items: center; gap: 8px;
-        }
-        .btn:active { transform: translateY(4px); }
-
-        .input-field {
-            padding: 12px 20px; border-radius: 20px; border: 3px solid #60a5fa;
-            font-size: 18px; font-weight: bold; text-align: center; width: 100%;
-            outline: none; color: #1e293b; margin-bottom: 12px;
-        }
-
-        .progress-bar-container {
-            position: absolute; top: 40px; left: 50%; transform: translateX(-50%);
-            width: 80%; max-width: 400px; height: 16px;
-            background: rgba(255,255,255,0.3); border-radius: 10px;
-            border: 2px solid white; display: none; pointer-events: none;
-            box-shadow: 0 0 10px rgba(255,255,255,0.5);
-        }
-        .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #4ade80, #22c55e); border-radius: 8px; transition: width 0.3s; }
-
-        #ad-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9); z-index: 100; display: none;
-            flex-direction: column; justify-content: center; align-items: center; color: white;
-        }
-        .ad-box {
-            background: #1f2937; padding: 40px; border-radius: 20px; text-align: center; border: 2px solid #3b82f6;
-        }
-
-        .skin-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; width: 100%; max-height: 300px; overflow-y: auto; padding: 10px; }
-        .skin-item { background: rgba(255,255,255,0.1); border: 2px solid transparent; border-radius: 15px; padding: 10px; text-align: center; cursor: pointer; transition: 0.2s; }
-        .skin-item.selected { border-color: #facc15; background: rgba(250, 204, 21, 0.2); }
-        .skin-color { width: 40px; height: 40px; border-radius: 50%; margin: 0 auto 10px auto; box-shadow: inset -5px -5px 10px rgba(0,0,0,0.3); }
-
-        .coin-badge { background: #facc15; color: #854d0e; padding: 4px 12px; border-radius: 20px; font-weight: 900; display: flex; align-items: center; gap: 4px; font-size: 14px; }
-    </style>
-</head>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Mood Run - KADO games</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://unpkg.com/peerjs@1.5.1/dist/peerjs.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@600&family=Varela+Round&display=swap');
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#6d5dfc;font-family:'Varela Round',sans-serif;color:#fff;touch-action:none;user-select:none;-webkit-user-select:none}
+#gc,#ui,.scr{position:absolute;top:0;left:0;width:100%;height:100%}
+#gc{z-index:1}#ui{z-index:10;pointer-events:none}
+.scr{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:14px;padding:20px;background:rgba(40,16,90,.72);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);pointer-events:auto;opacity:0;visibility:hidden;transition:opacity .3s}
+.scr.on{opacity:1;visibility:visible}
+.ttl,.btn,.pill,.sk,.gd{font-family:'Fredoka',cursive;font-weight:600}
+.ttl{text-align:center;text-shadow:0 4px 10px rgba(0,0,0,.35);line-height:1.1}
+.btn{border:0;color:#fff;padding:14px 24px;font-size:18px;border-radius:30px;cursor:pointer;width:100%;max-width:290px;display:flex;align-items:center;justify-content:center;gap:8px;position:relative;background:var(--c,#3b82f6);box-shadow:0 6px 0 var(--d,#1e3a8a)}
+.btn:active{transform:translateY(4px);box-shadow:0 2px 0 var(--d,#1e3a8a)}
+.btn[disabled]{opacity:.55;filter:grayscale(.7)}
+.g{--c:#22c55e;--d:#14532d}.b{--c:#3b82f6;--d:#1e3a8a}.y{--c:#f59e0b;--d:#92400e}.p{--c:#a855f7;--d:#581c87}.k{--c:#6b7280;--d:#374151}
+.btn svg,.pill svg{width:22px;height:22px;flex:none}
+.pill{display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.35);border:2px solid #fff;border-radius:20px;padding:4px 12px;font-size:18px}
+.note{opacity:.85;text-align:center;font-size:14px;max-width:290px;margin:0}
+.err{color:#fde047;min-height:20px;margin:0;font-size:14px;text-align:center}
+input{width:100%;max-width:290px;padding:12px 18px;border-radius:20px;border:3px solid #a78bfa;font:700 20px 'Varela Round',sans-serif;text-align:center;outline:none;color:#1e1b4b;-webkit-user-select:text;user-select:text}
+#toast{position:absolute;top:calc(env(safe-area-inset-top,0px) + 70px);left:50%;transform:translateX(-50%);z-index:30;background:rgba(0,0,0,.8);padding:8px 16px;border-radius:16px;font-weight:bold;display:none;max-width:90%;text-align:center;pointer-events:none}
+#hud{position:absolute;left:14px;right:14px;top:calc(env(safe-area-inset-top,0px) + 12px);display:none;flex-direction:column;gap:10px;pointer-events:none}
+.row{display:flex;justify-content:space-between;align-items:center}
+#bar{width:58%;height:14px;margin:0 auto;background:rgba(255,255,255,.35);border:2px solid #fff;border-radius:10px;overflow:hidden}
+#bar i{display:block;height:100%;width:0;background:#4ade80;transition:width .3s}
+#skin-grid,#gift-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;width:100%;max-width:330px}
+.sk,.gd{background:rgba(255,255,255,.14);border:3px solid transparent;border-radius:16px;padding:8px 2px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-size:12px;min-height:92px;text-align:center}
+.sel,.cur{border-color:#fde047;background:rgba(253,224,71,.22)}
+.sk i{width:42px;height:42px;border-radius:50%;border:3px solid #fff;display:block}
+.pr{display:flex;align-items:center;gap:3px}.pr svg{width:14px;height:14px}
+#gift-dot{position:absolute;top:6px;right:16px;width:14px;height:14px;border-radius:50%;background:#ef4444;border:2px solid #fff;display:none}
+#wheel{position:relative;display:flex;width:290px;height:36px;border-radius:18px;overflow:hidden;border:3px solid #fff}
+#wheel b{flex:1;text-align:center;line-height:30px;font-family:'Fredoka',cursive}
+#ptr{position:absolute;top:0;bottom:0;left:0;width:8px;background:#fff;box-shadow:0 0 8px #000;animation:sw 1.1s linear infinite alternate}
+@keyframes sw{to{left:calc(100% - 8px)}}
+</style></head>
 <body>
-
-    <div id="game-container"></div>
-    <div id="toast" style="position:absolute;top:70px;left:50%;transform:translateX(-50%);z-index:30;background:rgba(0,0,0,.75);color:#fff;padding:8px 16px;border-radius:16px;font-weight:bold;display:none;max-width:90%;text-align:center;pointer-events:none"></div>
-    
-    <div id="ad-overlay">
-        <div class="ad-box">
-            <h2 class="text-3xl font-black mb-4 text-blue-400">Reklam İzleniyor</h2>
-            <p class="mb-4 text-gray-300">Lütfen bekleyin...</p>
-            <div id="ad-timer" class="text-5xl font-black text-white">3</div>
-        </div>
-    </div>
-
-    <div id="ui-layer">
-        <div class="progress-bar-container" id="progress-container">
-            <div class="progress-fill" id="progress-fill"></div>
-        </div>
-
-        <div class="screen active" id="screen-splash" style="background:linear-gradient(135deg,#4f46e5,#9333ea);" onclick="setScreen('screen-menu')">
-            <h1 class="game-title" style="font-size: 4rem;">MOOD RUN</h1>
-            <div class="game-title" style="font-size:2rem;letter-spacing:.2em;margin-top:-6px;color:#facc15">3D</div>
-        </div>
-
-        <div class="screen" id="screen-menu">
-            <div class="absolute top-4 right-4 flex gap-2">
-                <button class="btn bg-gray-700 shadow-[0_4px_0_#374151] !w-auto !py-2 !px-4 text-sm" onclick="toggleLang()" id="lang-btn">TR/EN</button>
-            </div>
-            <div class="absolute top-4 left-4">
-                <div class="coin-badge"><span id="menu-coins">0</span> PUAN</div>
-            </div>
-
-            <h1 class="game-title mb-2">MOOD<br><span class="text-yellow-400">RUN</span></h1>
-            <p class="text-white/70 font-bold mb-8 tracking-widest">KADO games</p>
-            
-            <div class="flex flex-col gap-3 w-72">
-                <button class="btn bg-green-500 shadow-[0_6px_0_#14532d]" onclick="onPlay()" data-i18n="play">OYNA</button>
-                <button class="btn bg-purple-500 shadow-[0_6px_0_#4c1d95]" onclick="openSkins()" data-i18n="skins">SKİNLER</button>
-                <button class="btn bg-blue-500 shadow-[0_6px_0_#1e3a8a]" onclick="openSettings()" data-i18n="settings">AYARLAR</button>
-                <button class="btn bg-yellow-500 shadow-[0_6px_0_#b45309] text-yellow-900" onclick="claimDaily()" id="daily-btn" data-i18n="daily">GÜNLÜK ÖDÜL</button>
-            </div>
-        </div>
-
-        <div class="screen" id="screen-skins">
-            <h2 class="text-3xl font-black text-white mb-2" data-i18n="skins">SKİNLER</h2>
-            <div class="coin-badge mb-4"><span id="skin-coins">0</span> PUAN</div>
-            <div class="skin-grid" id="skin-list"></div>
-            <div class="w-72 mt-4 flex flex-col gap-2">
-                <button class="btn bg-yellow-500 shadow-[0_6px_0_#b45309] text-yellow-900" onclick="watchAdForPoints()" id="ad-btn" data-i18n="watchAd">REKLAM İZLE +100</button>
-                <button class="btn bg-gray-500 shadow-[0_4px_0_#374151]" onclick="setScreen('screen-menu')" data-i18n="back">GERİ</button>
-            </div>
-        </div>
-
-        <div class="screen" id="screen-name">
-            <h2 class="text-3xl font-black text-white mb-2 text-center" data-i18n="nameQ">İsmin ne?</h2>
-            <p class="text-white/70 text-sm font-bold mb-6 text-center px-8" data-i18n="nameDesc">Bu isim kaydedilecek.</p>
-            <div class="w-72">
-                <input type="text" id="name-input" class="input-field" maxlength="12" placeholder="İsmini yaz" autocomplete="off">
-                <p id="name-error" class="text-yellow-300 text-sm font-bold text-center h-5 mb-2"></p>
-                <button class="btn bg-green-500 shadow-[0_6px_0_#14532d]" onclick="saveName()" data-i18n="continue">DEVAM</button>
-            </div>
-        </div>
-
-        <div class="screen" id="screen-mode">
-            <h2 class="text-3xl font-black text-white mb-6" data-i18n="play">OYNA</h2>
-            <div class="flex flex-col gap-4 w-72">
-                <button class="btn bg-green-500 shadow-[0_6px_0_#14532d]" onclick="startSolo()" data-i18n="solo">TEK OYUNCULU</button>
-                <button class="btn bg-blue-500 shadow-[0_6px_0_#1e3a8a]" onclick="setScreen('screen-multi')" data-i18n="multi">ÇOK OYUNCULU</button>
-                <button class="btn bg-gray-500 shadow-[0_4px_0_#374151]" onclick="setScreen('screen-menu')" data-i18n="back">GERİ</button>
-            </div>
-        </div>
-
-        <div class="screen" id="screen-multi">
-            <h2 class="text-3xl font-black text-white mb-6" data-i18n="multi">ÇOK OYUNCULU</h2>
-            <div class="flex flex-col gap-4 w-72">
-                <button class="btn bg-blue-500 shadow-[0_6px_0_#1e3a8a]" onclick="showHostMenu()" data-i18n="createRoom">ODA KUR</button>
-                <button class="btn bg-green-500 shadow-[0_6px_0_#14532d]" onclick="showJoinMenu()" data-i18n="joinRoom">ODAYA KATIL</button>
-                <button class="btn bg-gray-500 shadow-[0_4px_0_#374151]" onclick="setScreen('screen-mode')" data-i18n="back">GERİ</button>
-            </div>
-        </div>
-
-        <div class="screen" id="screen-settings">
-            <h2 class="text-3xl font-black text-white mb-6" data-i18n="settings">AYARLAR</h2>
-            <div class="flex flex-col gap-4 w-72">
-                <p class="text-white font-bold text-center text-lg"><span data-i18n="player">Oyuncu</span>: <span id="set-name" class="text-yellow-400"></span></p>
-                <button id="btn-sound" class="btn bg-blue-500 shadow-[0_6px_0_#1e3a8a]" onclick="toggleSetting('sound')"></button>
-                <button id="btn-vib" class="btn bg-blue-500 shadow-[0_6px_0_#1e3a8a]" onclick="toggleSetting('vib')"></button>
-                <button class="btn bg-gray-500 shadow-[0_4px_0_#374151]" onclick="setScreen('screen-menu')" data-i18n="back">GERİ</button>
-            </div>
-        </div>
-
-        <div class="screen" id="screen-host">
-            <h2 class="text-3xl font-black text-white mb-6" data-i18n="createRoom">ODA KUR</h2>
-            <div class="bg-white/20 p-6 rounded-3xl border border-white/30 text-center w-80 backdrop-blur-sm">
-                <p class="text-white/80 text-sm font-bold mb-2" data-i18n="roomCodeDesc">Arkadaşına bu 4 haneli kodu ver:</p>
-                <h3 id="host-room-code" class="text-5xl font-black text-yellow-400 tracking-widest mb-4 drop-shadow-md">...</h3>
-                <div id="host-capacity" class="bg-black/30 rounded-full py-2 px-4 inline-block text-white font-bold mb-4">
-                    Oyuncular: 1/2
-                </div>
-                <button id="btn-start-mp" class="btn bg-green-500 shadow-[0_6px_0_#166534] mt-2 w-full hidden" onclick="startMultiplayer()" data-i18n="startGame">Oyunu Başlat!</button>
-                <button class="btn bg-gray-500 shadow-[0_4px_0_#374151] mt-3 w-full" onclick="backToStart()" data-i18n="cancel">İptal</button>
-            </div>
-            <p id="host-status" class="text-white mt-4 font-bold text-center h-6" data-i18n="opening">Oda açılıyor...</p>
-        </div>
-
-        <div class="screen" id="screen-join">
-            <h2 class="text-3xl font-black text-white mb-6" data-i18n="joinRoom">ODAYA KATIL</h2>
-            <div class="bg-white/10 p-6 rounded-3xl border border-white/20 w-80 backdrop-blur-sm">
-                <p class="text-white/80 text-sm font-bold text-center mb-4" data-i18n="enterCode">4 haneli oda kodunu gir:</p>
-                <input type="text" id="manual-join-code" placeholder="E.G. A1B2" class="input-field !mb-6 uppercase text-3xl tracking-widest text-center" maxlength="4">
-                <button class="btn bg-green-500 shadow-[0_6px_0_#14532d] w-full" onclick="joinByCode()" data-i18n="join">Katıl</button>
-                <button class="btn bg-gray-500 shadow-[0_4px_0_#374151] mt-3 w-full" onclick="backToStart()" data-i18n="back">Geri</button>
-            </div>
-            <p id="join-status" class="text-yellow-300 mt-4 font-bold text-center h-6"></p>
-        </div>
-
-        <div class="screen" id="screen-gameover">
-            <h1 class="game-title text-red-500 mb-4" style="text-shadow: 0 4px 0px #991b1b;" data-i18n="failed">KAYBETTİN!</h1>
-            <div class="bg-white px-8 py-6 rounded-3xl text-center mb-8 shadow-2xl">
-                <div class="text-5xl mb-2 text-red-500 font-black" style="font-family: Arial, sans-serif;">X</div>
-                <p id="fail-blame" class="text-red-600 font-black text-xl uppercase tracking-wider">Yanlış Geçit</p>
-                <p id="score-line" class="text-slate-700 font-bold mt-2"></p>
-            </div>
-            <div class="flex flex-col gap-4 w-72">
-                <button class="btn bg-blue-500 shadow-[0_6px_0_#1e3a8a]" id="btn-again" onclick="playAgain()" data-i18n="playAgain">Tekrar Oyna</button>
-                <p id="again-wait" class="text-white font-bold text-center" style="display:none" data-i18n="waitHost">Oda sahibinin başlatması bekleniyor...</p>
-                <button class="text-white/60 underline font-bold text-sm text-center" onclick="resetGame()" data-i18n="leaveRoom">Odadan Ayrıl</button>
-            </div>
-        </div>
-    </div>
-
-<script>
-    window.onerror = function(msg, url, lineNo, columnNo, error) {
-        showToast("Hata: " + msg, 5000);
-        return false;
-    };
-
-    if (!CanvasRenderingContext2D.prototype.roundRect) {
-        CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
-            r = Math.min(typeof r === 'number' ? r : 0, w / 2, h / 2);
-            this.moveTo(x + r, y); this.arcTo(x + w, y, x + w, y + h, r); this.arcTo(x + w, y + h, x, y + h, r);
-            this.arcTo(x, y + h, x, y, r); this.arcTo(x, y, x + w, y, r); this.closePath(); return this;
-        };
-    }
-
-    const translations = {
-        tr: {
-            play: "OYNA", skins: "SKİNLER", settings: "AYARLAR", daily: "GÜNLÜK ÖDÜL", watchAd: "REKLAM İZLE +100", back: "GERİ",
-            nameQ: "İsmin ne?", nameDesc: "Bu isim kaydedilecek.", continue: "DEVAM", solo: "TEK OYUNCULU", multi: "ÇOK OYUNCULU",
-            createRoom: "ODA KUR", joinRoom: "ODAYA KATIL", player: "Oyuncu", roomCodeDesc: "Arkadaşına bu kodu ver:",
-            startGame: "Oyunu Başlat!", cancel: "İptal", opening: "Oda açılıyor...", enterCode: "4 haneli kodu gir:", join: "Katıl",
-            failed: "KAYBETTİN!", playAgain: "Tekrar Oyna", waitHost: "Oda sahibi bekleniyor...", leaveRoom: "Odadan Ayrıl",
-            soundOn: "SES: AÇIK", soundOff: "SES: KAPALI", vibOn: "TİTREŞİM: AÇIK", vibOff: "TİTREŞİM: KAPALI",
-            unlocked: "AÇIK", buy: "SATIN AL", selected: "SEÇİLDİ", notEnough: "Yetersiz Puan!", dailyClaimed: "Yarın tekrar gel!",
-            dailySuccess: "Günlük ödül alındı: +150 Puan!"
-        },
-        en: {
-            play: "PLAY", skins: "SKINS", settings: "SETTINGS", daily: "DAILY REWARD", watchAd: "WATCH AD +100", back: "BACK",
-            nameQ: "What's your name?", nameDesc: "This name will be saved.", continue: "CONTINUE", solo: "SINGLE PLAYER", multi: "MULTIPLAYER",
-            createRoom: "CREATE ROOM", joinRoom: "JOIN ROOM", player: "Player", roomCodeDesc: "Give this code to your friend:",
-            startGame: "Start Game!", cancel: "Cancel", opening: "Opening room...", enterCode: "Enter 4-char code:", join: "Join",
-            failed: "YOU FAILED!", playAgain: "Play Again", waitHost: "Waiting for host...", leaveRoom: "Leave Room",
-            soundOn: "SOUND: ON", soundOff: "SOUND: OFF", vibOn: "VIBRATION: ON", vibOff: "VIBRATION: OFF",
-            unlocked: "UNLOCKED", buy: "BUY", selected: "SELECTED", notEnough: "Not enough points!", dailyClaimed: "Come back tomorrow!",
-            dailySuccess: "Daily reward claimed: +150 Points!"
-        }
-    };
-    let currentLang = 'tr';
-
-    window.toggleLang = () => {
-        currentLang = currentLang === 'tr' ? 'en' : 'tr';
-        applyLanguage();
-    };
-
-    function applyLanguage() {
-        document.querySelectorAll('[data-i18n]').forEach(el => {
-            const key = el.getAttribute('data-i18n');
-            if (translations[currentLang][key]) {
-                el.innerText = translations[currentLang][key];
-            }
-        });
-        document.getElementById('lang-btn').innerText = currentLang.toUpperCase();
-        refreshSettings();
-        renderSkins();
-    }
-
-    const store = {
-        get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } },
-        set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
-    };
-    const cleanName = (n) => String(n || '').replace(/[^\p{L}\p{N} _.-]/gu, '').trim().slice(0, 12);
-    let savedName = cleanName(store.get('kado_name', ''));
-    let soundOn = store.get('kado_sound', '1') === '1';
-    let vibOn = store.get('kado_vib', '1') === '1';
-    let totalPoints = parseInt(store.get('kado_points', '0')) || 0;
-    let lastDaily = store.get('kado_daily', '0');
-    
-    const SKINS = [
-        { id: 'red', color: 0xef4444, price: 0 },
-        { id: 'blue', color: 0x3b82f6, price: 100 },
-        { id: 'green', color: 0x22c55e, price: 250 },
-        { id: 'purple', color: 0xa855f7, price: 500 },
-        { id: 'gold', color: 0xfbbf24, price: 1000 }
-    ];
-    let selectedSkin = store.get('kado_skin', 'red');
-    let unlockedSkins = JSON.parse(store.get('kado_unlocked_skins', '["red"]'));
-
-    window.updatePointsUI = () => {
-        document.getElementById('menu-coins').innerText = totalPoints;
-        document.getElementById('skin-coins').innerText = totalPoints;
-    };
-    window.updatePointsUI();
-
-    let audioCtx = null;
-    function beep(freq, dur) {
-        if (!soundOn) return;
-        try {
-            audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-            const o = audioCtx.createOscillator(), g = audioCtx.createGain();
-            o.frequency.value = freq; g.gain.value = 0.08;
-            o.connect(g); g.connect(audioCtx.destination);
-            o.start(); o.stop(audioCtx.currentTime + dur);
-        } catch (e) {}
-    }
-    function buzz(ms) { if (vibOn && navigator.vibrate) navigator.vibrate(ms); }
-
-    window.setScreen = (id) => {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        if (id) document.getElementById(id).classList.add('active');
-        document.getElementById('progress-container').style.display = (id === null) ? 'block' : 'none';
-    };
-
-    window.onPlay = () => setScreen(savedName ? 'screen-mode' : 'screen-name');
-    window.saveName = () => {
-        const n = cleanName(document.getElementById('name-input').value);
-        if (n.length < 2) { document.getElementById('name-error').innerText = currentLang === 'tr' ? 'En az 2 karakter.' : 'Min 2 chars.'; return; }
-        savedName = n; store.set('kado_name', n);
-        setScreen('screen-mode');
-    };
-
-    window.refreshSettings = () => {
-        document.getElementById('set-name').innerText = savedName || '-';
-        const t = translations[currentLang];
-        document.getElementById('btn-sound').innerText = soundOn ? t.soundOn : t.soundOff;
-        document.getElementById('btn-vib').innerText = vibOn ? t.vibOn : t.vibOff;
-        document.getElementById('btn-sound').className = `btn ${soundOn ? 'bg-green-500' : 'bg-gray-500'} shadow-[0_6px_0_#1e3a8a]`;
-        document.getElementById('btn-vib').className = `btn ${vibOn ? 'bg-green-500' : 'bg-gray-500'} shadow-[0_6px_0_#1e3a8a]`;
-    };
-    
-    window.openSettings = () => { refreshSettings(); setScreen('screen-settings'); };
-    window.toggleSetting = (k) => {
-        if (k === 'sound') { soundOn = !soundOn; store.set('kado_sound', soundOn ? '1' : '0'); beep(520, 0.1); }
-        else { vibOn = !vibOn; store.set('kado_vib', vibOn ? '1' : '0'); buzz(80); }
-        refreshSettings();
-    };
-
-    window.claimDaily = () => {
-        const today = new Date().toDateString();
-        if (lastDaily === today) {
-            showToast(translations[currentLang].dailyClaimed);
-            return;
-        }
-        lastDaily = today; store.set('kado_daily', today);
-        totalPoints += 150; store.set('kado_points', totalPoints);
-        updatePointsUI();
-        showToast(translations[currentLang].dailySuccess);
-        beep(800, 0.2);
-    };
-
-    window.openSkins = () => { renderSkins(); setScreen('screen-skins'); };
-
-    function renderSkins() {
-        const list = document.getElementById('skin-list');
-        list.innerHTML = '';
-        SKINS.forEach(skin => {
-            const isUnlocked = unlockedSkins.includes(skin.id);
-            const isSelected = selectedSkin === skin.id;
-            const div = document.createElement('div');
-            div.className = `skin-item ${isSelected ? 'selected' : ''}`;
-            div.innerHTML = `
-                <div class="skin-color" style="background: #${skin.color.toString(16).padStart(6, '0')}"></div>
-                <p class="text-white font-bold text-sm">${isSelected ? translations[currentLang].selected : (isUnlocked ? translations[currentLang].unlocked : skin.price + ' PTS')}</p>
-            `;
-            div.onclick = () => handleSkinClick(skin);
-            list.appendChild(div);
-        });
-    }
-
-    function handleSkinClick(skin) {
-        if (unlockedSkins.includes(skin.id)) {
-            selectedSkin = skin.id;
-            store.set('kado_skin', skin.id);
-            updatePlayerSkinColor();
-            renderSkins();
-            beep(600, 0.1);
-        } else {
-            if (totalPoints >= skin.price) {
-                totalPoints -= skin.price;
-                store.set('kado_points', totalPoints);
-                unlockedSkins.push(skin.id);
-                store.set('kado_unlocked_skins', JSON.stringify(unlockedSkins));
-                selectedSkin = skin.id;
-                store.set('kado_skin', skin.id);
-                updatePointsUI();
-                updatePlayerSkinColor();
-                renderSkins();
-                beep(800, 0.2);
-            } else {
-                showToast(translations[currentLang].notEnough);
-                buzz(100);
-            }
-        }
-    }
-
-    window.watchAdForPoints = () => {
-        document.getElementById('ad-overlay').style.display = 'flex';
-        let time = 3;
-        document.getElementById('ad-timer').innerText = time;
-        const int = setInterval(() => {
-            time--;
-            document.getElementById('ad-timer').innerText = time;
-            if (time <= 0) {
-                clearInterval(int);
-                document.getElementById('ad-overlay').style.display = 'none';
-                totalPoints += 100;
-                store.set('kado_points', totalPoints);
-                updatePointsUI();
-                showToast("+100 PUAN");
-                beep(880, 0.2);
-            }
-        }, 1000);
-    };
-
-    function showToast(msg, ms = 3000) {
-        const t = document.getElementById('toast');
-        t.innerText = msg; t.style.display = 'block';
-        clearTimeout(showToast.h);
-        showToast.h = setTimeout(() => { t.style.display = 'none'; }, ms);
-    }
-
-    const FACES = ['smile', 'neutral', 'sad'];
-    const LANE_WIDTH = 3.2; 
-    const BOUNDARY = LANE_WIDTH * 1.1; 
-    const LOOP_LEN = 320; 
-    
-    let scene, camera, renderer, trackMesh, trackTexture;
-    let player, playerBody, leftArm, rightArm, leftLeg, rightLeg;
-    let opponent, oppBody, oppLeftArm, oppRightArm, oppLeftLeg, oppRightLeg;
-    let playerLabel, oppLabel;
-    
-    let gates = [], memoryBoards = [], particles = [];
-    let state = 'START'; 
-    let speed = 0.4; // Başlangıç hızı daha da yavaşlatıldı
-    let loopCount = 1;
-    let runTime = 0, oppRunTime = 0;
-    let targetX = 0, isDragging = false, previousPointerX = 0;
-    let isMultiplayer = false, isHost = false;
-    let oppTargetX = 0, oppTargetZ = 500, oppState = 'START';
-    let myName = "Player 1", oppName = "Player 2";
-    let lastSync = 0, round = 0, lastFrame = 0;
-    let score = 0;
-
-    let peer = null, conn = null;
-    let seed = 1, spawnedLoops = 0, currentLoopIdx = 0, currentSequenceIndex = 0;
-
-    function init() {
-        try {
-            if (typeof THREE === 'undefined') {
-                showToast("Three.js yüklenemedi!");
-                return;
-            }
-            const container = document.getElementById('game-container');
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x1e1b4b); 
-            scene.fog = new THREE.Fog(0x1e1b4b, 20, 100); 
-
-            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 300);
-            camera.position.set(0, 5, 10); 
-            
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            renderer.shadowMap.enabled = true;
-            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-            container.appendChild(renderer.domElement);
-
-            const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.9);
-            hemiLight.position.set(0, 20, 0);
-            scene.add(hemiLight);
-
-            const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
-            dirLight.position.set(-15, 25, 10);
-            dirLight.castShadow = true;
-            dirLight.shadow.mapSize.width = 1024; dirLight.shadow.mapSize.height = 1024;
-            scene.add(dirLight);
-
-            createTrack();
-            setupPlayers();
-
-            window.addEventListener('resize', onWindowResize);
-            
-            window.addEventListener('mousedown', onPointerDown);
-            window.addEventListener('mousemove', onPointerMove);
-            window.addEventListener('mouseup', onPointerUp);
-            window.addEventListener('mouseleave', onPointerUp);
-            window.addEventListener('touchstart', onPointerDown, {passive: false});
-            window.addEventListener('touchmove', onPointerMove, {passive: false});
-            window.addEventListener('touchend', onPointerUp);
-        } catch (e) {
-            showToast("Oyun başlatılamadı: " + e.message);
-        }
-    }
-
-    function createTrack() {
-        const canvas = document.createElement('canvas');
-        canvas.width = 512; canvas.height = 512;
-        const ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#2e1065'; 
-        ctx.fillRect(0, 0, 512, 512);
-        ctx.fillStyle = '#4c1d95'; 
-        ctx.fillRect(0, 0, 256, 256);
-        ctx.fillRect(256, 256, 256, 256);
-        
-        trackTexture = new THREE.CanvasTexture(canvas);
-        trackTexture.wrapS = THREE.RepeatWrapping;
-        trackTexture.wrapT = THREE.RepeatWrapping;
-        trackTexture.repeat.set(2, 10);
-
-        // ZEMİN UZATILDI VE TAKİP SİSTEMİ EKLENDİ (Kesilme Sorunu Çözümü)
-        const geometry = new THREE.PlaneGeometry(LANE_WIDTH * 3 + 2, 400);
-        const material = new THREE.MeshStandardMaterial({ 
-            map: trackTexture, roughness: 0.2, metalness: 0.5, emissive: 0x3b0764, emissiveIntensity: 0.2 
-        });
-        trackMesh = new THREE.Mesh(geometry, material);
-        trackMesh.rotation.x = -Math.PI / 2;
-        trackMesh.position.set(0, -0.5, 0); // Pozisyon animasyonda güncellenecek
-        trackMesh.receiveShadow = true;
-        scene.add(trackMesh);
-    }
-
-    // RESİMDEKİ GİBİ SEVİMLİ 3D KARAKTER TASARIMI
-    function createCharacterConfig(colorHex) {
-        const charGroup = new THREE.Group();
-        const charBody = new THREE.Group();
-        const mat = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.6, metalness: 0.1 });
-
-        // Kafa (Çok Büyük)
-        const head = new THREE.Mesh(new THREE.SphereGeometry(0.65, 32, 32), mat);
-        head.position.y = 2.0; head.castShadow = true; charBody.add(head);
-
-        // Gövde (Tombul)
-        const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.35, 0.9, 32), mat);
-        torso.position.y = 1.1; torso.castShadow = true; charBody.add(torso);
-
-        // Kollar (Dönebilmesi için Pivot Grubu)
-        const armGroupL = new THREE.Group(); armGroupL.position.set(-0.35, 1.4, 0);
-        const lArm = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.7, 16), mat);
-        lArm.position.y = -0.35; lArm.castShadow = true; armGroupL.add(lArm); charBody.add(armGroupL);
-
-        const armGroupR = new THREE.Group(); armGroupR.position.set(0.35, 1.4, 0);
-        const rArm = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.7, 16), mat);
-        rArm.position.y = -0.35; rArm.castShadow = true; armGroupR.add(rArm); charBody.add(armGroupR);
-
-        // Bacaklar (Dönebilmesi için Pivot Grubu)
-        const legGroupL = new THREE.Group(); legGroupL.position.set(-0.15, 0.65, 0);
-        const lLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.7, 16), mat);
-        lLeg.position.y = -0.35; lLeg.castShadow = true; legGroupL.add(lLeg); charBody.add(legGroupL);
-
-        const legGroupR = new THREE.Group(); legGroupR.position.set(0.15, 0.65, 0);
-        const rLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.7, 16), mat);
-        rLeg.position.y = -0.35; rLeg.castShadow = true; legGroupR.add(rLeg); charBody.add(legGroupR);
-
-        charGroup.add(charBody);
-        
-        return { 
-            root: charGroup, body: charBody, 
-            leftArm: armGroupL, rightArm: armGroupR, 
-            leftLeg: legGroupL, rightLeg: legGroupR, 
-            mat: mat 
-        };
-    }
-
-    let playerMat;
-    function setupPlayers() {
-        const skinData = SKINS.find(s => s.id === selectedSkin) || SKINS[0];
-        const myChar = createCharacterConfig(skinData.color); 
-        player = myChar.root; playerBody = myChar.body; 
-        leftArm = myChar.leftArm; rightArm = myChar.rightArm;
-        leftLeg = myChar.leftLeg; rightLeg = myChar.rightLeg;
-        playerMat = myChar.mat;
-        
-        player.add(createTextSprite("SEN", "#ffffff"));
-        scene.add(player);
-
-        const oppChar = createCharacterConfig(0x0ea5e9); 
-        opponent = oppChar.root; oppBody = oppChar.body; 
-        oppLeftArm = oppChar.leftArm; oppRightArm = oppChar.rightArm;
-        oppLeftLeg = oppChar.leftLeg; oppRightLeg = oppChar.rightLeg;
-        
-        oppLabel = createTextSprite("RAKİP", "#facc15"); 
-        opponent.add(oppLabel);
-        opponent.position.set(0, -100, 500); 
-        scene.add(opponent);
-    }
-
-    window.updatePlayerSkinColor = () => {
-        if(playerMat) {
-            const skinData = SKINS.find(s => s.id === selectedSkin) || SKINS[0];
-            playerMat.color.setHex(skinData.color);
-            playerMat.emissive.setHex(skinData.color);
-        }
-    };
-
-    function createTextSprite(text, color) {
-        const canvas = document.createElement('canvas');
-        canvas.width = 256; canvas.height = 64;
-        const context = canvas.getContext('2d');
-        
-        context.font = "900 40px 'Lovelo', 'Arial', sans-serif";
-        context.textAlign = "center";
-        context.textBaseline = "middle";
-        
-        context.strokeStyle = 'rgba(0,0,0,0.8)';
-        context.lineWidth = 6;
-        context.strokeText(text, 128, 32);
-        
-        context.fillStyle = color;
-        context.fillText(text, 128, 32);
-
-        const texture = new THREE.CanvasTexture(canvas);
-        const spriteMaterial = new THREE.SpriteMaterial({ map: texture, depthTest: false });
-        const sprite = new THREE.Sprite(spriteMaterial);
-        sprite.scale.set(3, 0.8, 1);
-        sprite.position.y = 3.5;
-        return sprite;
-    }
-
-    function drawCustomFace(ctx, type, isMemoryBoard) {
-        ctx.fillStyle = isMemoryBoard ? 'transparent' : 'rgba(255, 255, 255, 0.95)';
-        if(!isMemoryBoard) {
-            ctx.beginPath(); ctx.roundRect(20, 20, 472, 472, 80); ctx.fill();
-            ctx.lineWidth = 10; ctx.strokeStyle = '#e2e8f0'; ctx.stroke();
-        }
-
-        ctx.lineWidth = 35; ctx.lineCap = 'round';
-        ctx.strokeStyle = isMemoryBoard ? '#ffffff' : '#1e293b';
-        ctx.fillStyle = isMemoryBoard ? '#ffffff' : '#1e293b';
-        
-        ctx.beginPath(); ctx.arc(170, 200, 25, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(342, 200, 25, 0, Math.PI * 2); ctx.fill();
-
-        ctx.beginPath();
-        if (type === 'smile') ctx.arc(256, 260, 110, 0.1 * Math.PI, 0.9 * Math.PI);
-        else if (type === 'sad') ctx.arc(256, 390, 110, 1.1 * Math.PI, 1.9 * Math.PI);
-        else if (type === 'neutral') { ctx.moveTo(160, 310); ctx.lineTo(352, 310); }
-        ctx.stroke();
-    }
-
-    function createFaceTexture(type, isMemoryBoard = false) {
-        const canvas = document.createElement('canvas');
-        canvas.width = 512; canvas.height = 512;
-        const ctx = canvas.getContext('2d');
-        drawCustomFace(ctx, type, isMemoryBoard);
-        const texture = new THREE.CanvasTexture(canvas);
-        texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-        return texture;
-    }
-
-    function mulberry32(a) {
-        return function() {
-            a |= 0; a = a + 0x6D2B79F5 | 0;
-            let t = Math.imul(a ^ a >>> 15, 1 | a);
-            t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
-            return ((t ^ t >>> 14) >>> 0) / 4294967296;
-        };
-    }
-
-    function getLoopData(k) {
-        const rng = mulberry32((seed + k * 7919) >>> 0);
-        const sequence = [], rows = [];
-        for (let i = 0; i < 3; i++) {
-            const req = FACES[Math.floor(rng() * FACES.length)];
-            sequence.push(req);
-            const row = [...FACES];
-            for (let j = row.length - 1; j > 0; j--) {
-                const r = Math.floor(rng() * (j + 1));
-                [row[j], row[r]] = [row[r], row[j]];
-            }
-            
-            if (k === 0) {
-                row[1] = req;
-                const others = FACES.filter(f => f !== req);
-                row[0] = others[0];
-                row[2] = others[1];
-            }
-            
-            rows.push(row);
-        }
-        return { sequence, gates: rows };
-    }
-
-    function spawnLoop(k) {
-        const data = getLoopData(k);
-        const base = -k * LOOP_LEN;
-        spawnMemoryBoard(base - 60, data);
-        spawnGateRow(base - 150, 0, data);
-        spawnGateRow(base - 210, 1, data);
-        spawnGateRow(base - 270, 2, data);
-    }
-
-    function spawnMemoryBoard(zPos, data) {
-        const canvas = document.createElement('canvas');
-        canvas.width = 1024; canvas.height = 512;
-        const ctx = canvas.getContext('2d');
-
-        ctx.fillStyle = 'rgba(30, 58, 138, 0.95)'; 
-        ctx.beginPath(); ctx.roundRect(10, 10, 1004, 492, 40); ctx.fill();
-        ctx.lineWidth = 15; ctx.strokeStyle = '#60a5fa'; ctx.stroke();
-
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '900 70px "Lovelo", "Arial", sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(`SIRAYI HATIRLA!`, 512, 120);
-
-        const startX = 180; const spacing = 330;
-        data.sequence.forEach((face, index) => {
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = 512; tempCanvas.height = 512;
-            const tCtx = tempCanvas.getContext('2d');
-            drawCustomFace(tCtx, face, true);
-            ctx.drawImage(tempCanvas, startX + (index * spacing) - 100, 180, 200, 200);
-            if(index < 2) {
-                ctx.fillStyle = '#facc15'; ctx.font = 'bold 80px sans-serif';
-                ctx.fillText('→', startX + (index * spacing) + 165, 300);
-            }
-        });
-
-        const tex = new THREE.CanvasTexture(canvas);
-        const geo = new THREE.PlaneGeometry(14, 7);
-        const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true });
-        const board = new THREE.Mesh(geo, mat);
-        board.position.set(0, 6, zPos);
-        scene.add(board);
-        memoryBoards.push(board);
-    }
-
-    function spawnGateRow(zPos, seqIndex, data) {
-        const row = new THREE.Group();
-        row.position.z = zPos;
-        row.userData = { passed: false, seqIndex: seqIndex, required: data.sequence[seqIndex] };
-        
-        const rowFaces = data.gates[seqIndex];
-        const gateWidth = LANE_WIDTH * 0.95;
-        const gateHeight = 4.5;
-        const gateColors = [0xec4899, 0x3b82f6, 0x10b981]; 
-
-        for(let i=0; i<3; i++) {
-            const laneOffset = (i - 1) * LANE_WIDTH; 
-            const faceType = rowFaces[i];
-
-            const geo = new THREE.BoxGeometry(gateWidth, gateHeight, 0.4);
-            const mat = new THREE.MeshPhysicalMaterial({
-                color: gateColors[i], metalness: 0.5, roughness: 0.1,
-                transmission: 0.8, transparent: true, opacity: 0.9,
-                clearcoat: 1.0, clearcoatRoughness: 0.1, emissive: gateColors[i], emissiveIntensity: 0.2
-            });
-            const gateMesh = new THREE.Mesh(geo, mat);
-            gateMesh.position.set(laneOffset, gateHeight/2, 0);
-            gateMesh.receiveShadow = true;
-
-            const texGeo = new THREE.PlaneGeometry(gateWidth * 0.6, gateWidth * 0.6);
-            const texMat = new THREE.MeshBasicMaterial({ map: createFaceTexture(faceType, false), transparent: true });
-            const texMesh = new THREE.Mesh(texGeo, texMat);
-            texMesh.position.set(laneOffset, gateHeight/2 + 0.5, 0.21); 
-
-            row.add(gateMesh); row.add(texMesh);
-            gateMesh.userData = { faceType: faceType, isGate: true, laneX: laneOffset };
-        }
-        scene.add(row);
-        gates.push(row);
-    }
-
-    function createParticles(position) {
-        const geo = new THREE.BoxGeometry(0.3, 0.3, 0.3);
-        const mat = new THREE.MeshStandardMaterial({color: 0x4ade80, emissive: 0x22c55e});
-        for(let i=0; i<15; i++) {
-            const p = new THREE.Mesh(geo, mat);
-            p.position.copy(position); p.position.y += 2;
-            p.position.x += (Math.random() - 0.5) * 3;
-            p.userData = { vx: (Math.random() - 0.5) * 0.4, vy: Math.random() * 0.4 + 0.2, vz: (Math.random() - 0.5) * 0.4, life: 1.0 };
-            scene.add(p); particles.push(p);
-        }
-    }
-
-    function updateProgressBar() {
-        document.getElementById('progress-fill').style.width = `${(currentSequenceIndex / 3) * 100}%`;
-    }
-
-    function resetPlayerAndWorld() {
-        player.position.set(0, 0, 0); playerBody.rotation.set(0,0,0);
-        targetX = 0; loopCount = 1; speed = 0.4; 
-        currentSequenceIndex = 0; currentLoopIdx = 0;
-        
-        gates.forEach(g => scene.remove(g)); gates = [];
-        memoryBoards.forEach(b => scene.remove(b)); memoryBoards = [];
-        particles.forEach(p => scene.remove(p)); particles = [];
-
-        spawnedLoops = 0;
-        spawnLoop(0); spawnedLoops = 1;
-        updateProgressBar();
-    }
-
-    function onPointerDown(e) { 
-        if (state === 'PLAYING') { 
-            isDragging = true; 
-            previousPointerX = e.touches ? e.touches[0].clientX : e.clientX; 
-            if (e.touches) e.preventDefault(); 
-        } 
-    }
-    function onPointerMove(e) {
-        if (!isDragging || state !== 'PLAYING') return;
-        const currentX = e.touches ? e.touches[0].clientX : e.clientX;
-        const deltaX = currentX - previousPointerX;
-        targetX += deltaX * ((LANE_WIDTH * 2) / window.innerWidth * 1.5);
-        targetX = Math.max(-BOUNDARY, Math.min(BOUNDARY, targetX));
-        previousPointerX = currentX;
-        if (e.touches) e.preventDefault(); 
-    }
-    function onPointerUp(e) { isDragging = false; }
-    
-    function onWindowResize() {
-        camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-    }
-
-    function handleGameOver(blameName) {
-        if (state === 'GAMEOVER') return;
-        state = 'GAMEOVER'; isDragging = false;
-        document.getElementById('fail-blame').innerText = `${blameName} ${currentLang === 'tr' ? 'HATA YAPTI!' : 'FAILED!'}`;
-        
-        totalPoints += score * 5;
-        store.set('kado_points', totalPoints);
-        updatePointsUI();
-
-        const best = Math.max(score, +store.get('kado_best', '0') || 0); store.set('kado_best', String(best));
-        document.getElementById('score-line').innerText = `Geçit: ${score}  |  Rekor: ${best}  (+${score*5} Puan)`;
-        
-        beep(180, 0.3); buzz(200);
-        const guest = isMultiplayer && !isHost;
-        document.getElementById('btn-again').style.display = guest ? 'none' : 'block';
-        document.getElementById('again-wait').style.display = guest ? 'block' : 'none';
-        setScreen('screen-gameover');
-    }
-
-    window.resetGame = () => {
-        if (peer) { peer.destroy(); peer = null; }
-        conn = null; isMultiplayer = false; isHost = false; state = 'START';
-        opponent.position.set(0, -100, 500);
-        setScreen('screen-menu');
-    };
-
-    window.showHostMenu = () => {
-        if (typeof Peer === 'undefined') return showToast("PeerJS yüklenemedi!");
-        myName = savedName || "Player";
-        setScreen('screen-host');
-        createRoom();
-    };
-    window.showJoinMenu = () => { myName = savedName || "Player"; setScreen('screen-join'); };
-    window.createRoom = () => {
-        const shortCode = Math.random().toString(36).substring(2, 6).toUpperCase();
-        document.getElementById('host-room-code').innerText = shortCode;
-        document.getElementById('host-capacity').innerText = "Oyuncular: 1/2";
-        document.getElementById('btn-start-mp').classList.add('hidden');
-        document.getElementById('host-status').innerText = translations[currentLang].opening;
-        
-        isMultiplayer = true; isHost = true;
-        if (peer) peer.destroy();
-        peer = new Peer(`moodrun-p2p-${shortCode}`);
-        
-        peer.on('open', () => {
-            document.getElementById('host-status').innerText = currentLang === 'tr' ? "Oda açık! Kodu arkadaşına ver..." : "Room open! Give code to friend...";
-        });
-        peer.on('error', (err) => {
-            if (err.type === 'unavailable-id') createRoom();
-            else document.getElementById('host-status').innerText = "Error: " + err.type;
-        });
-        peer.on('connection', (connection) => {
-            if (conn && conn.open) { connection.close(); return; }
-            conn = connection;
-            document.getElementById('host-capacity').innerText = "Oyuncular: 2/2";
-            document.getElementById('host-status').innerText = currentLang === 'tr' ? "Rakip bağlandı! Başlatabilirsin." : "Opponent connected! You can start.";
-            document.getElementById('btn-start-mp').classList.remove('hidden');
-            setupConnectionListeners(conn);
-            conn.on('open', () => { conn.send({ type: 'join', name: myName }); });
-        });
-    };
-    window.joinByCode = () => {
-        if (typeof Peer === 'undefined') return showToast("PeerJS yüklenemedi!");
-        const code = document.getElementById('manual-join-code').value.trim().toUpperCase();
-        if (!code || code.length !== 4) return showToast("4 haneli kod gir / Enter 4-char code");
-        
-        isMultiplayer = true; isHost = false;
-        document.getElementById('join-status').innerText = "Bağlanıyor...";
-        
-        if (peer) peer.destroy();
-        peer = new Peer();
-        peer.on('open', () => {
-            conn = peer.connect(`moodrun-p2p-${code}`, { reliable: true });
-            setupConnectionListeners(conn);
-            conn.on('open', () => {
-                document.getElementById('join-status').innerText = "Katıldı! Oda sahibi bekleniyor...";
-                conn.send({ type: 'join', name: myName });
-            });
-        });
-        peer.on('error', () => {
-            document.getElementById('join-status').innerText = "Hata veya oda bulunamadı!";
-        });
-    };
-
-    function setupConnectionListeners(c) {
-        c.on('data', (data) => {
-            if (!data || typeof data !== 'object') return;
-            if (data.type === 'join') {
-                oppName = cleanName(data.name) || 'Rival';
-                updateNameLabel(oppLabel, oppName);
-            } else if (data.type === 'start') {
-                if (!isHost && Number.isInteger(data.seed) && Number.isInteger(data.round)) startRound(data.seed, data.round);
-            } else if (data.type === 'sync') {
-                if (!Number.isFinite(data.x) || !Number.isFinite(data.z) || !Number.isInteger(data.rd) || !['START', 'PLAYING', 'GAMEOVER'].includes(data.st)) return;
-                if (!isHost && data.st === 'PLAYING' && data.rd > round && Number.isInteger(data.sd)) startRound(data.sd, data.rd);
-                if (data.rd !== round) return;
-                oppTargetX = Math.max(-BOUNDARY, Math.min(BOUNDARY, data.x)); oppTargetZ = data.z; oppState = data.st;
-            } else if (data.type === 'gameover') {
-                if (data.rd === round) handleGameOver(cleanName(data.blame) || 'Rival');
-            }
-        });
-        c.on('close', () => showToast('Rakip odadan ayrıldı', 5000));
-    }
-
-    function updateNameLabel(sprite, name) {
-        const context = sprite.material.map.image.getContext('2d');
-        context.clearRect(0, 0, 256, 64);
-        context.fillStyle = sprite.material.map.image.dataset.color || '#ffffff';
-        context.fillText(name, 128, 48);
-        sprite.material.map.needsUpdate = true;
-    }
-
-    function startRound(newSeed, newRound) {
-        if (newRound <= round) return;
-        round = newRound; seed = newSeed; score = 0;
-        resetPlayerAndWorld();
-        setScreen(null);
-        state = 'PLAYING';
-        if (isMultiplayer) { opponent.position.set(0, 0, 0); oppTargetX = 0; oppTargetZ = 0; oppState = 'PLAYING'; }
-        else opponent.position.set(0, -100, 500);
-    }
-
-    window.startMultiplayer = () => {
-        if (!isHost || !conn || !conn.open) return;
-        const s = Math.floor(Math.random() * 1e9);
-        startRound(s, round + 1);
-        conn.send({ type: 'start', seed: s, round: round });
-    };
-    
-    window.startSolo = () => {
-        try {
-            if (!scene || !player) {
-                init(); 
-                if (!scene || !player) return showToast("Oyun motoru yüklenemedi. Sayfayı yenileyin.");
-            }
-            isMultiplayer = false;
-            myName = savedName || "Player";
-            startRound(Math.floor(Math.random() * 1e9), round + 1);
-        } catch(e) {
-            showToast("Başlatma Hatası: " + e.message);
-        }
-    };
-    
-    window.playAgain = () => {
-        if (!isMultiplayer) window.startSolo();
-        else if (isHost) window.startMultiplayer();
-    };
-    window.backToStart = () => {
-        if (peer) { peer.destroy(); peer = null; }
-        conn = null; isMultiplayer = false; isHost = false;
-        setScreen('screen-multi');
-    };
-
-    function animate() {
-        requestAnimationFrame(animate);
-        const nowT = performance.now();
-        const f = Math.min((nowT - (lastFrame || nowT)) / 16.667, 3); 
-        lastFrame = nowT;
-
-        // ZEMİN VE DOKU TAKİBİ (Platformun kesilmesini engeller)
-        if(trackMesh && trackTexture) {
-            trackMesh.position.z = player.position.z - 150; // Zemin karakteri takip eder
-            trackTexture.offset.y += speed * 0.005 * f;
-        }
-
-        if (isMultiplayer && conn && conn.open && nowT - lastSync > 33) {
-            lastSync = nowT;
-            conn.send({ type: 'sync', x: player.position.x, z: player.position.z, st: state, rd: round, sd: seed });
-        }
-
-        if (state === 'PLAYING') {
-            runTime += 0.15 * f;
-            
-            // UZUN SÜRELİ OYUNLARDA KASMAYI ÖNLEMEK İÇİN FLOATING ORIGIN
-            if (player.position.z < -500) {
-                const shift = 500;
-                player.position.z += shift;
-                gates.forEach(g => g.position.z += shift);
-                memoryBoards.forEach(b => b.position.z += shift);
-                // Zemin de kaydırılır
-                if(trackMesh) trackMesh.position.z += shift;
-            }
-
-            const prevZ = player.position.z;
-            player.position.z -= speed * f * 1.2; // Hız bir tık yavaşlatıldı
-            player.position.x += (targetX - player.position.x) * (1 - Math.pow(0.8, f)); 
-
-            // SEVİMLİ KARAKTER YÜRÜME/KOŞMA ANİMASYONU
-            playerBody.position.y = Math.abs(Math.sin(runTime)) * 0.2;
-            playerBody.rotation.z = (targetX - player.position.x) * -0.05;
-            
-            leftLeg.rotation.x = Math.sin(runTime) * 0.8;
-            rightLeg.rotation.x = -Math.sin(runTime) * 0.8;
-            
-            leftArm.rotation.x = -Math.sin(runTime) * 0.8;
-            rightArm.rotation.x = Math.sin(runTime) * 0.8;
-
-            while (player.position.z < -(spawnedLoops - 1) * LOOP_LEN - 200) {
-                spawnLoop(spawnedLoops); spawnedLoops++;
-            }
-
-            const idx = Math.max(0, Math.floor(-player.position.z / LOOP_LEN));
-            if (idx !== currentLoopIdx) {
-                currentLoopIdx = idx; loopCount = idx + 1;
-                speed = Math.min(1.6, 0.4 + 0.05 * idx); 
-                currentSequenceIndex = 0; updateProgressBar();
-            }
-
-            for (let i = 0; i < gates.length; i++) {
-                const row = gates[i];
-                if (row.position.z > player.position.z - 1.0 && row.position.z < prevZ + 1.0) {
-                    if (row.userData.passed) continue; 
-                    let hitFace = null, closestDist = Infinity;
-                    
-                    row.children.forEach(child => {
-                        if (child.userData.isGate) {
-                            const dist = Math.abs(player.position.x - child.userData.laneX);
-                            if (dist < closestDist && dist < 1.6) { closestDist = dist; hitFace = child.userData.faceType; }
-                        }
-                    });
-
-                    if (hitFace) {
-                        if (hitFace === row.userData.required) {
-                            row.userData.passed = true; row.position.y -= 100;
-                            createParticles(row.position);
-                            score++; beep(660, 0.08);
-                            currentSequenceIndex = Math.max(currentSequenceIndex, row.userData.seqIndex + 1);
-                            updateProgressBar();
-                        } else {
-                            handleGameOver(myName);
-                            if(isMultiplayer && conn) conn.send({ type: 'gameover', blame: myName, rd: round });
-                            break;
-                        }
-                    }
-                }
-            }
-
-            memoryBoards.forEach(b => { if(player.position.z < b.position.z) b.position.y += 0.5 * f; });
-
-            for (let i = gates.length - 1; i >= 0; i--) {
-                if (gates[i].position.z > player.position.z + 30) { scene.remove(gates[i]); gates.splice(i, 1); }
-            }
-            for (let i = memoryBoards.length - 1; i >= 0; i--) {
-                if (memoryBoards[i].position.z > player.position.z + 30) { scene.remove(memoryBoards[i]); memoryBoards.splice(i, 1); }
-            }
-
-        } else if (state === 'GAMEOVER') {
-            if (playerBody.rotation.x > -Math.PI / 2) {
-                playerBody.rotation.x -= 0.1;
-                playerBody.position.y = Math.max(0.2, playerBody.position.y - 0.05);
-            }
-        }
-
-        if (isMultiplayer && opponent) {
-            opponent.position.x += (oppTargetX - opponent.position.x) * 0.3;
-            if (oppState === 'PLAYING') {
-                opponent.position.z = player.position.z + (isHost ? 0.05 : -0.05);
-                oppRunTime += 0.15; oppBody.rotation.x = 0;
-                oppBody.position.y = Math.abs(Math.sin(oppRunTime)) * 0.2;
-                
-                oppLeftLeg.rotation.x = Math.sin(oppRunTime) * 0.8;
-                oppRightLeg.rotation.x = -Math.sin(oppRunTime) * 0.8;
-                oppLeftArm.rotation.x = -Math.sin(oppRunTime) * 0.8;
-                oppRightArm.rotation.x = Math.sin(oppRunTime) * 0.8;
-                
-            } else if (oppState === 'GAMEOVER') {
-                opponent.position.z = oppTargetZ;
-                oppBody.rotation.x = -Math.PI / 2; oppBody.position.y = 0.2;
-            }
-        }
-
-        for(let i=particles.length-1; i>=0; i--){
-            let p = particles[i];
-            p.position.x += p.userData.vx; p.position.y += p.userData.vy; p.position.z += p.userData.vz;
-            p.userData.vy -= 0.01; p.userData.life -= 0.02;
-            p.scale.setScalar(Math.max(0, p.userData.life));
-            if(p.userData.life <= 0) { scene.remove(p); particles.splice(i, 1); }
-        }
-
-        camera.position.z += ((player.position.z + 10) - camera.position.z) * 0.15;
-        camera.position.x += ((player.position.x * 0.3) - camera.position.x) * 0.15;
-        camera.lookAt(player.position.x * 0.2, 1.5, player.position.z - 10);
-
-        renderer.render(scene, camera);
-    }
-
-    init();
-    animate();
-    setTimeout(() => { if (document.getElementById('screen-splash').classList.contains('active')) setScreen('screen-menu'); }, 2000);
-    applyLanguage();
+<div id="gc"></div>
+<div id="toast"></div>
+<div id="ui">
+ <div id="hud"><div class="row"><div class="pill" id="hud-lvl"></div><div class="pill"><span data-ic="coin"></span><b id="hud-coins">0</b></div></div><div id="bar"><i id="bar-fill"></i></div></div>
+
+ <div class="scr on" id="s-splash" style="background:linear-gradient(135deg,#f95010,#ff1a05);-webkit-backdrop-filter:none;backdrop-filter:none" onclick="setScreen('s-menu')">
+  <img src="data:image/jpeg;base64,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" alt="KADO" style="width:92%;max-width:540px;-webkit-mask-image:radial-gradient(ellipse at center,#000 52%,transparent 78%);mask-image:radial-gradient(ellipse at center,#000 52%,transparent 78%)">
+  <div class="ttl" style="font-size:2.2rem;letter-spacing:.45em;margin-top:-10px">games</div>
+ </div>
+
+ <div class="scr" id="s-menu">
+  <div class="pill" style="position:absolute;top:calc(env(safe-area-inset-top,0px) + 14px);right:14px"><span data-ic="coin"></span><b class="cn">0</b></div>
+  <div class="ttl" style="font-size:3.6rem">MOOD<br><span style="color:#fde047">RUN</span></div>
+  <div style="letter-spacing:.3em;opacity:.8;margin-bottom:10px">KADO games</div>
+  <button class="btn g" onclick="onPlay()"><span data-i="play"></span></button>
+  <button class="btn p" onclick="openShop()"><span data-i="shop"></span></button>
+  <button class="btn y" onclick="openDaily()"><span data-ic="gift"></span><span data-i="daily"></span><i id="gift-dot"></i></button>
+  <button class="btn b" onclick="openSettings()"><span data-i="settings"></span></button>
+ </div>
+
+ <div class="scr" id="s-name">
+  <div class="ttl" style="font-size:2rem" data-i="nameQ"></div>
+  <p class="note" data-i="nameNote"></p>
+  <input id="name-in" maxlength="12" autocomplete="off" data-p="nameHint">
+  <p id="name-err" class="err"></p>
+  <button class="btn g" onclick="saveName()"><span data-i="next"></span></button>
+ </div>
+
+ <div class="scr" id="s-mode">
+  <div class="ttl" style="font-size:2rem" data-i="play"></div>
+  <button class="btn g" onclick="startSolo()"><span data-i="single"></span></button>
+  <button class="btn b" onclick="setScreen('s-multi')"><span data-i="multi"></span></button>
+  <button class="btn k" onclick="setScreen('s-menu')"><span data-i="back"></span></button>
+ </div>
+
+ <div class="scr" id="s-multi">
+  <div class="ttl" style="font-size:2rem" data-i="multi"></div>
+  <button class="btn b" onclick="showHost()"><span data-i="createRoom"></span></button>
+  <button class="btn g" onclick="showJoin()"><span data-i="joinRoom"></span></button>
+  <button class="btn k" onclick="setScreen('s-mode')"><span data-i="back"></span></button>
+ </div>
+
+ <div class="scr" id="s-host">
+  <div class="ttl" style="font-size:2rem" data-i="hostT"></div>
+  <p class="note" data-i="giveCode"></p>
+  <div id="host-code" class="ttl" style="font-size:3.4rem;letter-spacing:.2em;color:#fde047">...</div>
+  <div class="pill" id="host-cap"></div>
+  <button id="btn-start" class="btn g" style="display:none" onclick="startMultiplayer()"><span data-i="start"></span></button>
+  <button class="btn k" onclick="backToStart()"><span data-i="cancel"></span></button>
+  <p id="host-status" class="err"></p>
+ </div>
+
+ <div class="scr" id="s-join">
+  <div class="ttl" style="font-size:2rem" data-i="joinT"></div>
+  <p class="note" data-i="enterCode"></p>
+  <input id="join-code" maxlength="4" placeholder="A1B2" style="text-transform:uppercase;font-size:30px;letter-spacing:.3em">
+  <button class="btn g" onclick="joinByCode()"><span data-i="join"></span></button>
+  <button class="btn k" onclick="backToStart()"><span data-i="back"></span></button>
+  <p id="join-status" class="err"></p>
+ </div>
+
+ <div class="scr" id="s-set">
+  <div class="ttl" style="font-size:2rem" data-i="settings"></div>
+  <div class="pill" id="set-name"></div>
+  <button class="btn b" onclick="toggleLang()"><span id="lang-btn"></span></button>
+  <button class="btn b" onclick="toggleSetting('sound')"><span id="btn-sound"></span></button>
+  <button class="btn b" onclick="toggleSetting('vib')"><span id="btn-vib"></span></button>
+  <button class="btn k" onclick="setScreen('s-menu')"><span data-i="back"></span></button>
+ </div>
+
+ <div class="scr" id="s-shop">
+  <div class="pill" style="position:absolute;top:calc(env(safe-area-inset-top,0px) + 14px);right:14px"><span data-ic="coin"></span><b class="cn">0</b></div>
+  <div class="ttl" style="font-size:2rem" data-i="shop"></div>
+  <div id="skin-grid"></div>
+  <button class="btn y" onclick="watchAd50()"><span data-ic="ad"></span><span data-i="ad50"></span></button>
+  <button class="btn k" onclick="setScreen('s-menu')"><span data-i="back"></span></button>
+ </div>
+
+ <div class="scr" id="s-daily">
+  <div class="ttl" style="font-size:2rem" data-i="daily"></div>
+  <div id="gift-grid"></div>
+  <button class="btn g" id="btn-gift" onclick="claimGift()"><span data-ic="gift"></span><span id="gift-txt"></span></button>
+  <button class="btn k" onclick="setScreen('s-menu')"><span data-i="back"></span></button>
+ </div>
+
+ <div class="scr" id="s-ad" style="background:#14101f">
+  <div class="ttl" style="font-size:2rem" data-i="adT"></div>
+  <div id="ad-count" class="ttl" style="font-size:4rem"></div>
+  <p class="note" data-i="adNote"></p>
+ </div>
+
+ <div class="scr" id="s-over">
+  <div data-ic="fail"></div>
+  <div class="ttl" style="font-size:2.6rem;color:#fecaca" data-i="oops"></div>
+  <p class="ttl" id="fail-blame" style="font-size:1.1rem;margin:0"></p>
+  <div class="pill"><span data-ic="coin"></span><b id="over-coins">+0</b></div>
+  <p id="score-line" class="note"></p>
+  <div id="wheel"><b style="background:#f97316">x2</b><b style="background:#a855f7">x3</b><b style="background:#3b82f6">x4</b><b style="background:#22c55e">x5</b><i id="ptr"></i></div>
+  <button class="btn y" id="btn-claim" onclick="claimWheel()"><span data-ic="ad"></span><span data-i="claim"></span></button>
+  <button class="btn g" id="btn-again" onclick="playAgain()"><span data-i="again"></span></button>
+  <p class="note" id="again-wait" style="display:none" data-i="wait"></p>
+  <button class="btn k" onclick="leaveMenu()"><span data-i="leave"></span></button>
+ </div>
+</div>
+
+<script type="module">
+// Polyfill: older iOS Safari (before 16) has no ctx.roundRect
+if(!CanvasRenderingContext2D.prototype.roundRect){CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){r=Math.min(typeof r==='number'?r:0,w/2,h/2);this.moveTo(x+r,y);this.arcTo(x+w,y,x+w,y+h,r);this.arcTo(x+w,y+h,x,y+h,r);this.arcTo(x,y+h,x,y,r);this.arcTo(x,y,x+w,y,r);this.closePath();return this}}
+
+const $=id=>document.getElementById(id);
+const store={get(k,d){try{const v=localStorage.getItem(k);return v===null?d:v}catch(e){return d}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+
+// ---------- ICONS (drawn, no emoji) ----------
+const IC={
+coin:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#fbbf24" stroke="#b45309" stroke-width="2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#f59e0b" stroke-width="2.5"/></svg>',
+ad:'<svg viewBox="0 0 24 24"><rect x="1.5" y="5.5" width="14" height="13" rx="3" fill="#fff"/><path d="M17 10.5l5.5-3.5v10L17 13.5z" fill="#fff"/></svg>',
+gift:'<svg viewBox="0 0 24 24"><rect x="3" y="10" width="18" height="11" rx="2" fill="#ef4444"/><rect x="2" y="6.5" width="20" height="5" rx="2" fill="#f87171"/><rect x="10.5" y="6.5" width="3" height="14.5" fill="#fde047"/><path d="M12 6.5C9 1.5 5 4.5 8.5 6.5zM12 6.5c3-5 7-2 3.5 0z" fill="#fde047"/></svg>',
+fail:'<svg viewBox="0 0 120 120" width="110" height="110"><circle cx="60" cy="60" r="54" fill="#ef4444" stroke="#991b1b" stroke-width="6"/><path d="M38 38l16 16M54 38L38 54M66 38l16 16M82 38L66 54" stroke="#fff" stroke-width="7" stroke-linecap="round"/><path d="M40 88q20-22 40 0" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round"/></svg>',
+check:'<svg viewBox="0 0 24 24"><path d="M5 13l4 4 10-10" fill="none" stroke="#4ade80" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>'};
+document.querySelectorAll('[data-ic]').forEach(e=>{e.innerHTML=IC[e.dataset.ic]});
+
+// ---------- LANGUAGES ----------
+const D={
+en:{play:'PLAY',shop:'SHOP',daily:'DAILY GIFT',settings:'SETTINGS',nameQ:"What's your name?",nameNote:'This name will be saved and cannot be changed later.',nameHint:'Type your name',next:'CONTINUE',nameErr:'Type at least 2 characters.',single:'SINGLE PLAYER',multi:'MULTIPLAYER',back:'BACK',createRoom:'CREATE ROOM',joinRoom:'JOIN ROOM',hostT:'Create Room',giveCode:'Give this 4-character code to your friend:',players:'Players',start:'START GAME',cancel:'CANCEL',joinT:'Join Room',enterCode:'Enter the 4-character room code:',join:'JOIN',player:'Player',sound:'SOUND',vib:'VIBRATION',on:'ON',off:'OFF',lang:'LANGUAGE',langName:'ENGLISH',oops:'OOPS!',mistake:n=>n+' MADE A MISTAKE!',gates:'Gates',best:'Best',claim:'CLAIM BONUS',again:'PLAY AGAIN',leave:'MENU',wait:'Waiting for the host to restart...',remember:'REMEMBER THE ORDER!',level:'LEVEL',rival:'Rival',you:'You',adT:'AD',adNote:'Test ad. The real ad will be added later.',equipped:'EQUIPPED',select:'SELECT',poor:'Not enough coins',ad50:'WATCH AD  +50',day:'DAY',claimGift:'CLAIM',comeBack:'Come back tomorrow',opening:'Opening room...',roomOpen:'Room is open! Waiting for your friend to enter the code...',connErr:'Connection error',oppIn:'Opponent connected! You can start the game.',badCode:'Please enter the 4-character room code.',connecting:'Connecting to room...',joined:'Joined! Waiting for the host to start...',notFound:'Connection error or room not found!',oppLeft:'Opponent left the room'},
+tr:{play:'OYNA',shop:'MAĞAZA',daily:'GÜNLÜK HEDİYE',settings:'AYARLAR',nameQ:'İsmin ne?',nameNote:'Bu isim kaydedilecek ve sonradan değiştirilemeyecek.',nameHint:'İsmini yaz',next:'DEVAM',nameErr:'En az 2 karakter yaz.',single:'TEK OYUNCULU',multi:'ÇOK OYUNCULU',back:'GERİ',createRoom:'ODA KUR',joinRoom:'ODAYA KATIL',hostT:'Oda Kur',giveCode:'Arkadaşına bu 4 haneli kodu ver:',players:'Oyuncu',start:'OYUNU BAŞLAT',cancel:'İPTAL',joinT:'Odaya Katıl',enterCode:'4 haneli oda kodunu gir:',join:'KATIL',player:'Oyuncu',sound:'SES',vib:'TİTREŞİM',on:'AÇIK',off:'KAPALI',lang:'DİL',langName:'TÜRKÇE',oops:'UPS!',mistake:n=>n+' HATA YAPTI!',gates:'Kapı',best:'En iyi',claim:'BONUSU AL',again:'TEKRAR OYNA',leave:'MENÜ',wait:'Kurucunun yeniden başlatması bekleniyor...',remember:'SIRAYI HATIRLA!',level:'SEVİYE',rival:'Rakip',you:'Sen',adT:'REKLAM',adNote:'Test reklamı. Gerçek reklam sonra eklenecek.',equipped:'SEÇİLİ',select:'SEÇ',poor:'Yeterli altının yok',ad50:'REKLAM İZLE  +50',day:'GÜN',claimGift:'AL',comeBack:'Yarın tekrar gel',opening:'Oda açılıyor...',roomOpen:'Oda açıldı! Arkadaşının kodu girmesi bekleniyor...',connErr:'Bağlantı hatası',oppIn:'Rakip bağlandı! Oyunu başlatabilirsin.',badCode:'Lütfen 4 haneli oda kodunu gir.',connecting:'Odaya bağlanılıyor...',joined:'Odaya girildi! Kurucunun başlatması bekleniyor...',notFound:'Bağlantı hatası veya oda bulunamadı!',oppLeft:'Rakip odadan ayrıldı'}};
+let lang=store.get('kado_lang','')||((navigator.language||'en').toLowerCase().indexOf('tr')===0?'tr':'en');
+const t=(k,...a)=>{const v=D[lang][k]!==undefined?D[lang][k]:D.en[k];return typeof v==='function'?v(...a):v};
+
+// ---------- SAVED DATA ----------
+const cleanName=n=>String(n||'').replace(/[^\p{L}\p{N} _.-]/gu,'').trim().slice(0,12);
+let savedName=cleanName(store.get('kado_name',''));
+let soundOn=store.get('kado_sound','1')==='1',vibOn=store.get('kado_vib','1')==='1';
+let coins=+store.get('kado_coins','0')||0;
+const SKINS=[{c:0xef4444,p:0},{c:0x3b82f6,p:100},{c:0x22c55e,p:150},{c:0xa855f7,p:200},{c:0xf97316,p:300},{c:0xec4899,p:400},{c:0xfacc15,p:600},{c:-1,p:1000}]; // c:-1 = rainbow
+let owned;try{owned=JSON.parse(store.get('kado_owned','[0]'));if(!Array.isArray(owned))owned=[0]}catch(e){owned=[0]}
+let skin=+store.get('kado_skin','0')||0;if(!owned.includes(skin)||!SKINS[skin])skin=0;
+let lastClaim=store.get('kado_gdate',''),streak=+store.get('kado_gstreak','0')||0;
+
+// ---------- UI HELPERS ----------
+let audioCtx=null,cur='s-splash';
+function beep(f,d){if(!soundOn)return;try{audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.frequency.value=f;g.gain.value=.07;o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+d)}catch(e){}}
+const buzz=ms=>{if(vibOn&&navigator.vibrate)navigator.vibrate(ms)};
+function toast(msg,ms=3000){const e=$('toast');e.textContent=msg;e.style.display='block';clearTimeout(toast.h);toast.h=setTimeout(()=>{e.style.display='none'},ms)}
+window.addEventListener('error',e=>{if(e.message&&e.message!=='Script error.')toast('Error: '+e.message,10000)});
+function setScreen(id){document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));if(id)$(id).classList.add('on');$('hud').style.display=id===null?'flex':'none';cur=id}
+function addCoins(n){coins+=n;store.set('kado_coins',String(coins));document.querySelectorAll('.cn').forEach(e=>{e.textContent=coins});updateHud()}
+function updateHud(){$('hud-lvl').textContent=t('level')+' '+loopCount;$('hud-coins').textContent=coins+runCoins}
+function updateBar(){$('bar-fill').style.width=(seqIdx/3*100)+'%'}
+function applyLang(){document.documentElement.lang=lang;document.querySelectorAll('[data-i]').forEach(e=>{e.textContent=t(e.dataset.i)});document.querySelectorAll('[data-p]').forEach(e=>{e.placeholder=t(e.dataset.p)});refreshSettings();renderShop();refreshDaily();updateHud()}
+
+// ---------- NAME / SETTINGS ----------
+function onPlay(){setScreen(savedName?'s-mode':'s-name')}
+function saveName(){const n=cleanName($('name-in').value);if(n.length<2){$('name-err').textContent=t('nameErr');return}savedName=n;store.set('kado_name',n);$('name-err').textContent='';setScreen('s-mode')}
+function refreshSettings(){$('set-name').textContent=t('player')+': '+(savedName||'-');$('lang-btn').textContent=t('lang')+': '+t('langName');$('btn-sound').textContent=t('sound')+': '+t(soundOn?'on':'off');$('btn-vib').textContent=t('vib')+': '+t(vibOn?'on':'off')}
+function openSettings(){refreshSettings();setScreen('s-set')}
+function toggleLang(){lang=lang==='tr'?'en':'tr';store.set('kado_lang',lang);applyLang()}
+function toggleSetting(k){if(k==='sound'){soundOn=!soundOn;store.set('kado_sound',soundOn?'1':'0');beep(520,.1)}else{vibOn=!vibOn;store.set('kado_vib',vibOn?'1':'0');buzz(80)}refreshSettings()}
+
+// ---------- SHOP / ADS / DAILY GIFT ----------
+const hex=c=>'#'+c.toString(16).padStart(6,'0');
+function renderShop(){$('skin-grid').innerHTML=SKINS.map((s,i)=>{const o=owned.includes(i),bg=s.c<0?'conic-gradient(#f44,#fa0,#ee0,#4d4,#0dd,#44f,#d4d,#f44)':hex(s.c);const st=i===skin?'<b>'+t('equipped')+'</b>':o?'<b>'+t('select')+'</b>':'<span class="pr">'+IC.coin+s.p+'</span>';return '<div class="sk'+(i===skin?' sel':'')+'" onclick="pickSkin('+i+')"><i style="background:'+bg+'"></i>'+st+'</div>'}).join('')}
+function pickSkin(i){const s=SKINS[i];if(!owned.includes(i)){if(coins<s.p){toast(t('poor'));beep(180,.2);return}addCoins(-s.p);owned.push(i);store.set('kado_owned',JSON.stringify(owned))}skin=i;store.set('kado_skin',String(i));applySkin();renderShop();beep(660,.1)}
+function openShop(){renderShop();setScreen('s-shop')}
+function showAd(onReward){ // TEST AD: replace with an AdMob rewarded ad (Capacitor plugin) before release
+ const prev=cur;setScreen('s-ad');let n=3;$('ad-count').textContent=n;
+ const iv=setInterval(()=>{n--;$('ad-count').textContent=n;if(n<=0){clearInterval(iv);setScreen(prev);onReward()}},1000)}
+function watchAd50(){showAd(()=>addCoins(50))}
+const GIFTS=[20,30,40,60,80,100,200];
+const dayKey=d=>d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
+function giftState(){const y=new Date();y.setDate(y.getDate()-1);const today=lastClaim===dayKey(new Date());const base=today?streak-1:(lastClaim===dayKey(y)?streak:0);return{avail:!today,base,idx:Math.max(0,base)%7}}
+function refreshDaily(){const g=giftState();$('gift-dot').style.display=g.avail?'block':'none';$('gift-grid').innerHTML=GIFTS.map((a,i)=>{const done=g.avail?i<g.idx:i<=g.idx;return '<div class="gd'+(g.avail&&i===g.idx?' cur':'')+'"><span>'+t('day')+' '+(i+1)+'</span><span class="pr">'+IC.coin+a+'</span>'+(done?'<span class="pr">'+IC.check+'</span>':'')+'</div>'}).join('');$('btn-gift').disabled=!g.avail;$('gift-txt').textContent=g.avail?t('claimGift')+' +'+GIFTS[g.idx]:t('comeBack')}
+function claimGift(){const g=giftState();if(!g.avail)return;addCoins(GIFTS[g.idx]);streak=g.base+1;lastClaim=dayKey(new Date());store.set('kado_gdate',lastClaim);store.set('kado_gstreak',String(streak));refreshDaily();beep(880,.15)}
+function openDaily(){refreshDaily();setScreen('s-daily')}
+function claimWheel(){const w=$('wheel').getBoundingClientRect(),p=$('ptr').getBoundingClientRect();const m=[2,3,4,5][Math.max(0,Math.min(3,Math.floor((p.left+4-w.left)/(w.width/4))))];$('btn-claim').disabled=true;showAd(()=>{addCoins(runCoins*(m-1));$('over-coins').textContent='+'+runCoins*m})}
+
+// ---------- MULTIPLAYER (P2P) ----------
+let peer=null,conn=null,isMulti=false,isHost=false,myName='',oppName='',oppX=0,oppZ=0,oppState='START',oppSkin=0,round=0,seed=1;
+function showHost(){myName=savedName;updateLabel(playerLabel,myName,'#fff');setScreen('s-host');createRoom()}
+function showJoin(){myName=savedName;updateLabel(playerLabel,myName,'#fff');$('join-status').textContent='';setScreen('s-join')}
+function backToStart(){if(peer){peer.destroy();peer=null}conn=null;isMulti=false;isHost=false;setScreen('s-multi')}
+function createRoom(){
+ const code=Math.random().toString(36).substring(2,6).toUpperCase();
+ $('host-code').textContent=code;$('host-cap').textContent=t('players')+': 1/2';$('btn-start').style.display='none';$('host-status').textContent=t('opening');
+ isMulti=true;isHost=true;if(peer)peer.destroy();
+ peer=new Peer('moodrun-p2p-'+code);
+ peer.on('open',()=>{$('host-status').textContent=t('roomOpen')});
+ peer.on('error',e=>{if(e.type==='unavailable-id')createRoom();else $('host-status').textContent=t('connErr')+': '+e.type});
+ peer.on('connection',c=>{
+  if(conn&&conn.open){c.close();return} // room is full
+  conn=c;$('host-cap').textContent=t('players')+': 2/2';$('host-status').textContent=t('oppIn');$('btn-start').style.display='flex';
+  setupConn(c);c.on('open',()=>{c.send({type:'join',name:myName,skin})});
+ });
+}
+function joinByCode(){
+ const code=$('join-code').value.trim().toUpperCase();
+ if(code.length!==4){toast(t('badCode'));return}
+ isMulti=true;isHost=false;round=0;$('join-status').textContent=t('connecting');
+ if(peer)peer.destroy();peer=new Peer();
+ peer.on('open',()=>{conn=peer.connect('moodrun-p2p-'+code,{reliable:true});setupConn(conn);conn.on('open',()=>{$('join-status').textContent=t('joined');conn.send({type:'join',name:myName,skin})})});
+ peer.on('error',()=>{$('join-status').textContent=t('notFound')});
+}
+function setupConn(c){
+ c.on('data',d=>{
+  if(!d||typeof d!=='object')return;
+  if(d.type==='join'){oppName=cleanName(d.name)||t('rival');updateLabel(oppLabel,oppName,'#fde047');if(Number.isInteger(d.skin)&&d.skin>=0&&d.skin<SKINS.length){oppSkin=d.skin;applyOppSkin()}}
+  else if(d.type==='start'){if(!isHost&&Number.isInteger(d.seed)&&Number.isInteger(d.round))startRound(d.seed,d.round)}
+  else if(d.type==='sync'){
+   if(!Number.isFinite(d.x)||!Number.isFinite(d.z)||!Number.isInteger(d.rd)||!['START','PLAYING','GAMEOVER'].includes(d.st))return;
+   if(!isHost&&d.st==='PLAYING'&&d.rd>round&&Number.isInteger(d.sd))startRound(d.sd,d.rd); // guest joins a round it missed
+   if(d.rd!==round)return;
+   oppX=Math.max(-BND,Math.min(BND,d.x));oppZ=d.z;oppState=d.st;
+  }
+  else if(d.type==='gameover'){if(d.rd===round)handleGameOver(cleanName(d.blame)||t('rival'))}
+ });
+ c.on('close',()=>toast(t('oppLeft'),5000));
+}
+function startRound(s,r){if(r<=round)return;round=r;seed=s;resetWorld();setScreen(null);state='PLAYING';if(isMulti){opp.position.set(0,0,0);oppX=0;oppZ=0;oppState='PLAYING'}else opp.position.set(0,-100,500)}
+function startMultiplayer(){if(!isHost||!conn||!conn.open)return;const s=Math.floor(Math.random()*1e9);startRound(s,round+1);conn.send({type:'start',seed:s,round})}
+function startSolo(){isMulti=false;myName=savedName;updateLabel(playerLabel,myName,'#fff');startRound(Math.floor(Math.random()*1e9),round+1)}
+function playAgain(){if(!isMulti)startSolo();else if(isHost)startMultiplayer()}
+function leaveMenu(){if(peer){peer.destroy();peer=null}conn=null;isMulti=false;isHost=false;clearWorld();pBody.rotation.set(0,0,0);pBody.position.y=0;player.position.set(0,0,0);opp.position.set(0,-100,500);state='START';setScreen('s-menu')}
+function handleGameOver(name){
+ if(state==='GAMEOVER')return;
+ state='GAMEOVER';dragging=false;
+ $('fail-blame').textContent=t('mistake',name);
+ const best=Math.max(score,+store.get('kado_best','0')||0);store.set('kado_best',String(best));
+ $('score-line').textContent=t('gates')+': '+score+'     '+t('best')+': '+best;
+ addCoins(runCoins);$('over-coins').textContent='+'+runCoins;
+ const guest=isMulti&&!isHost,has=runCoins>0;
+ $('btn-again').style.display=guest?'none':'flex';$('again-wait').style.display=guest?'block':'none';
+ $('btn-claim').disabled=false;$('btn-claim').style.display=has?'flex':'none';$('wheel').style.display=has?'flex':'none';
+ beep(180,.3);buzz(200);setScreen('s-over');
+}
+
+// ---------- 3D ENGINE ----------
+const FACES=['smile','neutral','sad'],LW=3.2,BND=LW*1.1,P=6.4,TL=512,GH=4.5,GW=LW*.95;
+const GAP0=2,GAP_STEP=.1,GAP_MIN=1.2,V0=36,V_STEP=1.2,V_MAX=50; // time between gates: 2.0s, 1.9s, 1.8s ... down to 1.2s; speed in units/second
+let scene,camera,renderer,trackTex,curbTex,trackM,curbL,curbR,ground,player,pBody,pLL,pRL,opp,oBody,oLL,oRL,playerLabel,oppLabel,pMat,oMat,faceMats={},wf={},frameMats,panelMats,pMats,gPillar,gTop,gPanel,gCard,bGeo,pGeo;
+let gates=[],boards=[],parts=[],deco=[];
+let state='START',speed=V0/60,loopCount=1,runTime=0,oRun=0,targetX=0,dragging=false,prevPX=0,spawned=0,curLoop=0,seqIdx=0,score=0,runCoins=0,lastSync=0,lastFrame=0;
+const loops=[];
+
+function canvasTex(w,h,draw,rep){const c=document.createElement('canvas');c.width=w;c.height=h;draw(c.getContext('2d'),w,h);const tx=new THREE.CanvasTexture(c);if(rep){tx.wrapS=tx.wrapT=THREE.RepeatWrapping;tx.repeat.set(rep[0],rep[1])}tx.anisotropy=4;return tx}
+function drawFace(g,type,board){
+ if(!board){g.fillStyle='rgba(255,255,255,.96)';g.beginPath();g.roundRect(20,20,472,472,90);g.fill();g.lineWidth=12;g.strokeStyle='#e9d5ff';g.stroke()}
+ g.lineWidth=35;g.lineCap='round';g.strokeStyle=g.fillStyle=board?'#fff':'#3b0764';
+ [170,342].forEach(x=>{g.beginPath();g.arc(x,200,25,0,7);g.fill()});
+ g.beginPath();
+ if(type==='smile')g.arc(256,260,110,.1*Math.PI,.9*Math.PI);
+ else if(type==='sad')g.arc(256,390,110,1.1*Math.PI,1.9*Math.PI);
+ else{g.moveTo(160,310);g.lineTo(352,310)}
+ g.stroke();
+}
+function makeLabel(text,color){const c=document.createElement('canvas');c.width=256;c.height=64;const tx=new THREE.CanvasTexture(c);const s=new THREE.Sprite(new THREE.SpriteMaterial({map:tx,depthTest:false}));s.scale.set(4,1,1);s.position.y=3.5;s.userData={c,tx};updateLabel(s,text,color);return s}
+function updateLabel(s,text,color){const g=s.userData.c.getContext('2d');g.clearRect(0,0,256,64);g.font="600 34px Fredoka,'Varela Round',sans-serif";g.textAlign='center';g.lineWidth=6;g.strokeStyle='rgba(0,0,0,.55)';g.strokeText(text,128,46);g.fillStyle=color;g.fillText(text,128,46);s.userData.tx.needsUpdate=true}
+function applySkin(){if(pMat)pMat.color.setHex(SKINS[skin].c<0?0xff4444:SKINS[skin].c)}
+function applyOppSkin(){if(oMat)oMat.color.setHex(SKINS[oppSkin].c<0?0xff4444:SKINS[oppSkin].c)}
+function scatter(m,z,cloud){m.position.x=(Math.random()<.5?-1:1)*((cloud?14:9)+Math.random()*(cloud?50:28));m.userData.y=cloud?16+Math.random()*10:.6+Math.random()*9;m.position.y=m.userData.y;m.position.z=z}
+
+// Deterministic levels: same seed + same round number = same faces on every device
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let x=Math.imul(a^a>>>15,1|a);x=x+Math.imul(x^x>>>7,61|x)^x;return((x^x>>>14)>>>0)/4294967296}}
+function getLoopData(k){const rng=mulberry32((seed+k*7919)>>>0),sequence=[],rows=[];for(let i=0;i<3;i++){sequence.push(FACES[Math.floor(rng()*3)]);const r=[...FACES];for(let j=2;j>0;j--){const q=Math.floor(rng()*(j+1));[r[j],r[q]]=[r[q],r[j]]}rows.push(r)}return{sequence,gates:rows}}
+function loopInfo(k){while(loops.length<=k){const i=loops.length,start=i?loops[i-1].end:0,v=Math.min(V_MAX,V0+V_STEP*i),gap=n=>Math.max(GAP_MIN,GAP0-GAP_STEP*(3*i+n))*v,board=start-(i?1.5:3)*v,g1=board-gap(0),g2=g1-gap(1),g3=g2-gap(2);loops.push({start,v,board,g:[g1,g2,g3],end:g3})}return loops[k]}
+function spawnLoop(k){const d=getLoopData(k),L=loopInfo(k);spawnBoard(L.board,d);L.g.forEach((z,j)=>spawnGateRow(z,j,d))}
+function spawnBoard(z,data){
+ const tx=canvasTex(1024,512,g=>{
+  const gr=g.createLinearGradient(0,0,0,512);gr.addColorStop(0,'#8b5cf6');gr.addColorStop(1,'#4c1d95');
+  g.fillStyle=gr;g.beginPath();g.roundRect(10,10,1004,492,50);g.fill();g.lineWidth=14;g.strokeStyle='#f0abfc';g.stroke();
+  g.fillStyle='#fff';g.font='600 64px Fredoka,sans-serif';g.textAlign='center';g.fillText(t('remember'),512,125);
+  data.sequence.forEach((f,i)=>{const cx=180+i*332;g.drawImage(wf[f],cx-100,180,200,200);if(i<2){g.fillStyle='#fde047';g.beginPath();g.moveTo(cx+135,250);g.lineTo(cx+135,320);g.lineTo(cx+195,285);g.fill()}});
+ });
+ const b=new THREE.Mesh(bGeo,new THREE.MeshBasicMaterial({map:tx,transparent:true}));b.position.set(0,6,z);scene.add(b);boards.push(b);
+}
+function killBoard(b){scene.remove(b);b.material.map.dispose();b.material.dispose()}
+function spawnGateRow(z,j,data){
+ const row=new THREE.Group();row.position.z=z;row.userData={passed:false,seq:j,req:data.sequence[j]};
+ data.gates[j].forEach((face,i)=>{
+  const x=(i-1)*LW,ci=Math.floor(Math.random()*6);
+  const pl=new THREE.Mesh(gPanel,panelMats[ci]);pl.position.set(x,GH/2,0);pl.userData={isGate:true,face,laneX:x};
+  const a=new THREE.Mesh(gPillar,frameMats[ci]);a.position.set(x-GW/2+.2,GH/2,0);
+  const b=new THREE.Mesh(gPillar,frameMats[ci]);b.position.set(x+GW/2-.2,GH/2,0);
+  const top=new THREE.Mesh(gTop,frameMats[ci]);top.position.set(x,GH-.25,0);
+  const card=new THREE.Mesh(gCard,faceMats[face]);card.position.set(x,GH/2+.2,.05);
+  row.add(pl,a,b,top,card);
+ });
+ scene.add(row);gates.push(row);
+}
+function burst(x,z){for(let i=0;i<16;i++){const p=new THREE.Mesh(pGeo,pMats[i%5]);p.position.set(x+(Math.random()-.5)*3,2,z);p.userData={vx:(Math.random()-.5)*.4,vy:Math.random()*.4+.2,vz:(Math.random()-.5)*.4,life:1};scene.add(p);parts.push(p)}}
+function clearWorld(){gates.forEach(g=>scene.remove(g));gates=[];boards.forEach(killBoard);boards=[];parts.forEach(p=>scene.remove(p));parts=[]}
+function resetWorld(){clearWorld();loops.length=0;spawned=0;curLoop=0;seqIdx=0;score=0;runCoins=0;loopCount=1;speed=V0/60;targetX=0;player.position.set(0,0,0);pBody.rotation.set(0,0,0);updateBar();updateHud()}
+
+function init(){
+ scene=new THREE.Scene();
+ scene.background=canvasTex(2,256,(g,w,h)=>{const gr=g.createLinearGradient(0,0,0,h);gr.addColorStop(0,'#4f7cff');gr.addColorStop(.55,'#8fd3ff');gr.addColorStop(1,'#d9f2ff');g.fillStyle=gr;g.fillRect(0,0,w,h)});
+ scene.fog=new THREE.Fog(0xa4dcff,50,230);
+ camera=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,.1,400);camera.position.set(0,7,14);
+ renderer=new THREE.WebGLRenderer({antialias:true});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,2));$('gc').appendChild(renderer.domElement);
+ scene.add(new THREE.HemisphereLight(0xffffff,0x9bb0ff,.95));
+ const dl=new THREE.DirectionalLight(0xffffff,.55);dl.position.set(-10,25,15);scene.add(dl);
+
+ // colorful floor: textures scroll with the player so the road always feels like it flows
+ const LANE=[['#ff8fcf','#ff6fbd'],['#6ee7ff','#4fd0f5'],['#fff27a','#ffe14d']];
+ trackTex=canvasTex(256,128,(g,w,h)=>{LANE.forEach((c,i)=>{g.fillStyle=c[0];g.fillRect(i*w/3,0,w/3+1,h/2);g.fillStyle=c[1];g.fillRect(i*w/3,h/2,w/3+1,h/2)});g.fillStyle='rgba(255,255,255,.9)';[w/3,2*w/3].forEach(x=>g.fillRect(x-3,0,6,h))},[1,TL/P]);
+ curbTex=canvasTex(32,128,(g,w,h)=>{g.fillStyle='#7c3aed';g.fillRect(0,0,w,h/2);g.fillStyle='#fff';g.fillRect(0,h/2,w,h/2)},[1,TL/P]);
+ const flat=(w,mat,y)=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(w,TL),mat);m.rotation.x=-Math.PI/2;m.position.y=y;scene.add(m);return m};
+ trackM=flat(LW*3,new THREE.MeshBasicMaterial({map:trackTex}),0);
+ curbL=flat(1.2,new THREE.MeshBasicMaterial({map:curbTex}),.03);curbL.position.x=-(LW*1.5+.6);
+ curbR=flat(1.2,new THREE.MeshBasicMaterial({map:curbTex}),.03);curbR.position.x=LW*1.5+.6;
+ ground=flat(300,new THREE.MeshBasicMaterial({color:0x3ddc97}),-.05);
+
+ // living background: floating shapes and clouds that drift past
+ const DG=[new THREE.BoxGeometry(2,2,2),new THREE.SphereGeometry(1.2,12,10),new THREE.ConeGeometry(1.2,2.6,6),new THREE.OctahedronGeometry(1.4),new THREE.TorusGeometry(1.1,.4,8,14)];
+ const GC=[0xff5a5f,0x4dabf7,0x51cf66,0xfcc419,0xcc5de8,0xff922b];
+ const DM=GC.map(c=>new THREE.MeshLambertMaterial({color:c}));
+ for(let i=0;i<44;i++){const m=new THREE.Mesh(DG[i%5],DM[i%6]);const s=.6+Math.random()*1.6;m.scale.set(s,s,s);scatter(m,30-Math.random()*360,false);m.userData.ph=Math.random()*6;scene.add(m);deco.push(m)}
+ const cm=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.9});
+ for(let i=0;i<12;i++){const m=new THREE.Mesh(DG[1],cm);m.scale.set(5,1.3,2.4);scatter(m,30-Math.random()*360,true);m.userData.cloud=1;scene.add(m);deco.push(m)}
+
+ // characters
+ const mk=c=>{const root=new THREE.Group(),body=new THREE.Group(),mat=new THREE.MeshStandardMaterial({color:c,roughness:.35,metalness:.05});
+  const torso=new THREE.Mesh(new THREE.CylinderGeometry(.35,.45,1,16),mat);torso.position.y=1.4;
+  const head=new THREE.Mesh(new THREE.SphereGeometry(.4,24,24),mat);head.position.y=2.2;
+  const lg=new THREE.BoxGeometry(.25,.9,.25),l=new THREE.Mesh(lg,mat),r=new THREE.Mesh(lg,mat);l.position.set(-.18,.45,0);r.position.set(.18,.45,0);
+  body.add(torso,head,l,r);root.add(body);
+  const sh=new THREE.Mesh(new THREE.CircleGeometry(.7,16),new THREE.MeshBasicMaterial({color:0,transparent:true,opacity:.25}));sh.rotation.x=-Math.PI/2;sh.position.y=.04;root.add(sh);
+  scene.add(root);return{root,body,l,r,mat}};
+ const a=mk(0xef4444);player=a.root;pBody=a.body;pLL=a.l;pRL=a.r;pMat=a.mat;
+ const b=mk(0x0ea5e9);opp=b.root;oBody=b.body;oLL=b.l;oRL=b.r;oMat=b.mat;opp.position.set(0,-100,500);
+ playerLabel=makeLabel(t('you'),'#fff');player.add(playerLabel);oppLabel=makeLabel(t('rival'),'#fde047');opp.add(oppLabel);
+ applySkin();
+
+ // shared gate assets (created once, no per-gate textures or heavy materials)
+ FACES.forEach(f=>{faceMats[f]=new THREE.MeshBasicMaterial({map:canvasTex(512,512,g=>drawFace(g,f,false)),transparent:true});const c=document.createElement('canvas');c.width=c.height=512;drawFace(c.getContext('2d'),f,true);wf[f]=c});
+ frameMats=GC.map(c=>new THREE.MeshLambertMaterial({color:c}));
+ panelMats=GC.map(c=>new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:.28,depthWrite:false,side:THREE.DoubleSide}));
+ gPillar=new THREE.BoxGeometry(.4,GH,.5);gTop=new THREE.BoxGeometry(GW,.5,.5);gPanel=new THREE.PlaneGeometry(GW-.4,GH-.5);gCard=new THREE.PlaneGeometry(2,2);
+ bGeo=new THREE.PlaneGeometry(14,7);pGeo=new THREE.BoxGeometry(.3,.3,.3);
+ pMats=[0xff5a5f,0x4dabf7,0x51cf66,0xfcc419,0xcc5de8].map(c=>new THREE.MeshBasicMaterial({color:c}));
+
+ addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+ const dn=e=>{if(state==='PLAYING'){dragging=true;prevPX=e.touches?e.touches[0].clientX:e.clientX}};
+ const mv=e=>{if(!dragging||state!=='PLAYING')return;const x=e.touches?e.touches[0].clientX:e.clientX;targetX=Math.max(-BND,Math.min(BND,targetX+(x-prevPX)*((LW*2)/innerWidth*1.5)));prevPX=x};
+ const up=()=>{dragging=false};
+ const B=document.body;B.addEventListener('mousedown',dn);B.addEventListener('mousemove',mv);B.addEventListener('mouseup',up);B.addEventListener('mouseleave',up);
+ B.addEventListener('touchstart',dn,{passive:false});B.addEventListener('touchmove',mv,{passive:false});B.addEventListener('touchend',up);
+}
+
+function animate(){
+ requestAnimationFrame(animate);
+ const nt=performance.now(),f=Math.min((nt-(lastFrame||nt))/16.667,3);lastFrame=nt;
+
+ if(state==='START')player.position.z-=.15*f; // idle scroll behind the menu
+ if(state==='PLAYING'){
+  const prevZ=player.position.z;
+  player.position.z-=speed*f;
+  player.position.x+=(targetX-player.position.x)*(1-Math.pow(.8,f));
+  while(player.position.z-loopInfo(spawned).board<320)spawnLoop(spawned++);
+  let idx=curLoop;while(player.position.z<loopInfo(idx).end)idx++;
+  if(idx!==curLoop){curLoop=idx;loopCount=idx+1;seqIdx=0;updateBar();updateHud()}
+  speed=loopInfo(curLoop).v/60;
+  for(const row of gates){
+   if(row.userData.passed||row.position.z>prevZ+1||row.position.z<player.position.z-1)continue;
+   let face=null,best=1.5;
+   row.children.forEach(c=>{if(c.userData.isGate){const d=Math.abs(player.position.x-c.userData.laneX);if(d<best){best=d;face=c.userData.face}}});
+   if(!face)continue;
+   if(face===row.userData.req){row.userData.passed=true;burst(player.position.x,row.position.z);row.position.y-=100;score++;runCoins+=5;seqIdx=Math.max(seqIdx,row.userData.seq+1);updateBar();updateHud();beep(660,.08)}
+   else{handleGameOver(myName);if(isMulti&&conn&&conn.open)conn.send({type:'gameover',blame:myName,rd:round});break}
+  }
+  boards.forEach(b=>{if(player.position.z<b.position.z)b.position.y+=.5*f});
+  for(let i=gates.length-1;i>=0;i--)if(gates[i].position.z>player.position.z+30){scene.remove(gates[i]);gates.splice(i,1)}
+  for(let i=boards.length-1;i>=0;i--)if(boards[i].position.z>player.position.z+30){killBoard(boards[i]);boards.splice(i,1)}
+ }
+ if(state==='PLAYING'||state==='START'){
+  runTime+=.15*f;pBody.position.y=Math.abs(Math.sin(runTime))*.2;pBody.rotation.z=(targetX-player.position.x)*-.05;
+  pLL.rotation.x=Math.sin(runTime)*.8;pRL.rotation.x=-Math.sin(runTime)*.8;pLL.position.y=.45+Math.abs(Math.sin(runTime))*.3;pRL.position.y=.45+Math.abs(Math.cos(runTime))*.3;
+ }else if(state==='GAMEOVER'&&pBody.rotation.x>-Math.PI/2){pBody.rotation.x-=.1;pBody.position.y=Math.max(.2,pBody.position.y-.05)}
+
+ // world follows the player; floor patterns scroll so speed is always visible
+ const pz=player.position.z;
+ trackM.position.z=curbL.position.z=curbR.position.z=ground.position.z=pz-170;
+ const off=(-pz/P)%1;trackTex.offset.y=off;curbTex.offset.y=off;
+ for(const d of deco){if(d.position.z>pz+30)scatter(d,pz-300-Math.random()*60,d.userData.cloud);d.rotation.y+=.01*f;if(!d.userData.cloud){d.rotation.x+=.006*f;d.position.y=d.userData.y+Math.sin(nt*.002+d.userData.ph)*.5}}
+ const hue=(nt/2500)%1;if(SKINS[skin].c<0)pMat.color.setHSL(hue,.85,.55);if(isMulti&&SKINS[oppSkin].c<0)oMat.color.setHSL(hue,.85,.55);
+
+ if(isMulti&&conn&&conn.open&&nt-lastSync>33){lastSync=nt;conn.send({type:'sync',x:player.position.x,z:player.position.z,st:state,rd:round,sd:seed})}
+ if(isMulti){
+  opp.position.x+=(oppX-opp.position.x)*.3;
+  if(oppState==='PLAYING'){
+   opp.position.z=pz+(isHost?.05:-.05); // always shown side by side with you
+   oRun+=.15*f;oBody.rotation.x=0;oBody.position.y=Math.abs(Math.sin(oRun))*.2;oLL.rotation.x=Math.sin(oRun)*.8;oRL.rotation.x=-Math.sin(oRun)*.8;
+  }else if(oppState==='GAMEOVER'){opp.position.z=oppZ;oBody.rotation.x=-Math.PI/2;oBody.position.y=.2}
+ }
+ for(let i=parts.length-1;i>=0;i--){const p=parts[i],u=p.userData;p.position.x+=u.vx;p.position.y+=u.vy;p.position.z+=u.vz;u.vy-=.01;u.life-=.02;p.scale.setScalar(Math.max(0,u.life));if(u.life<=0){scene.remove(p);parts.splice(i,1)}}
+
+ camera.position.z+=((pz+10)-camera.position.z)*.15;
+ camera.position.x+=((player.position.x*.3)-camera.position.x)*.15;
+ camera.lookAt(player.position.x*.2,2,pz-10);
+ renderer.render(scene,camera);
+}
+
+Object.assign(window,{setScreen,onPlay,saveName,startSolo,showHost,showJoin,backToStart,startMultiplayer,joinByCode,openSettings,toggleLang,toggleSetting,openShop,pickSkin,watchAd50,openDaily,claimGift,playAgain,leaveMenu,claimWheel});
+init();
+addCoins(0);applyLang();
+animate();
+setTimeout(()=>{if(cur==='s-splash')setScreen('s-menu')},2400);
 </script>
-</body>
-</html>
-```
-
-Çözülen Sorunlar:
-
-1. Platform Kesilmesi/Ekranın Gitmesi: Zemin (Track) artık karakterin Z eksenindeki konumunu sürekli takip ediyor (trackMesh.position.z = player.position.z - 150;). Karakter ilerledikçe zemin onunla birlikte kayıyor. Ayrıca ışınlanma (Floating Origin) anında zemin de kaydırılıyor, böylece ne kadar uzağa giderseniz gidin asla boşluğa düşmüyorsunuz ve ekran kararmıyor.
-2. Karakter Tasarımı: Gönderdiğiniz resme sadık kalarak büyük kafalı, tombul gövdeli, kolsuz/bacaksız ama uzuvları hareket eden sevimli bir karakter oluşturdum. Figür artık eski silindir yapısından çok daha karakteristik.
-3. Hız Ayarı: Başlangıç hızı 0.4'e çekildi ve maksimum hız 1.6 ile sınırlandırıldı. Platformda gerçekten yürüyormuş gibi hissettiren, daha yavaş ve akıcı bir tempo sağlandı.
-4. Font: Lovelo fontu için -webkit-text-stroke ve CSS text-shadow kullanılarak yazının içi daha dolu ve kalın gösterildi.
-5. Hata Testi: trackMesh konumundan kaynaklanan ekran kararmasını giderdim. Artık oyun sonsuza kadar stabil çalışacaktır.
+</body></html>
