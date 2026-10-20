@@ -52,13 +52,6 @@
             outline: none; color: #1e293b; margin-bottom: 12px;
         }
 
-        .room-list-item {
-            background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.2);
-            border-radius: 16px; padding: 12px 16px; display: flex; justify-content: space-between;
-            align-items: center; margin-bottom: 8px; cursor: pointer; transition: background 0.2s;
-        }
-        .room-list-item:hover { background: rgba(255,255,255,0.2); }
-
         .progress-bar-container {
             position: absolute; top: 40px; left: 50%; transform: translateX(-50%);
             width: 80%; max-width: 400px; height: 16px;
@@ -66,13 +59,6 @@
             border: 2px solid white; display: none; pointer-events: none;
         }
         .progress-fill { height: 100%; width: 0%; background: #4ade80; border-radius: 8px; transition: width 0.3s; }
-
-        #custom-modal {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: white; padding: 24px; border-radius: 24px; z-index: 50;
-            display: none; flex-direction: column; width: 80%; max-width: 350px;
-            pointer-events: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-        }
     </style>
 </head>
 <body>
@@ -95,7 +81,7 @@
                 
                 <div class="flex flex-col gap-3 mt-4">
                     <button class="btn bg-blue-500 shadow-[0_6px_0_#1e3a8a]" onclick="showHostMenu()">Oda Kur</button>
-                    <button class="btn bg-green-500 shadow-[0_6px_0_#14532d]" onclick="showJoinMenu()">Odaya Katıl</button>
+                    <button class="btn bg-green-500 shadow-[0_6px_0_#14532d]" onclick="showJoinMenu()">Kodla Katıl</button>
                 </div>
                 <button class="text-white/60 underline font-bold mt-6 text-sm w-full text-center" onclick="startSolo()">Tek Kişilik Oyna</button>
             </div>
@@ -105,7 +91,7 @@
         <div class="screen" id="screen-host">
             <h2 class="text-3xl font-black text-white mb-6">Oda Kur</h2>
             <div class="bg-white/20 p-6 rounded-3xl border border-white/30 text-center w-80 backdrop-blur-sm">
-                <p class="text-white/80 text-sm font-bold mb-2">Arkadaşına bu kodu ver:</p>
+                <p class="text-white/80 text-sm font-bold mb-2">Arkadaşına bu 4 haneli kodu ver:</p>
                 <h3 id="host-room-code" class="text-5xl font-black text-yellow-400 tracking-widest mb-4 drop-shadow-md">...</h3>
                 <div id="host-capacity" class="bg-black/30 rounded-full py-2 px-4 inline-block text-white font-bold mb-4">
                     Oyuncu: 1/2
@@ -113,7 +99,7 @@
                 <button id="btn-start-mp" class="btn bg-green-500 shadow-[0_6px_0_#166534] mt-2 w-full hidden" onclick="startMultiplayer()">Oyunu Başlat!</button>
                 <button class="btn bg-gray-500 shadow-[0_4px_0_#374151] mt-3 w-full" onclick="setScreen('screen-start')">İptal</button>
             </div>
-            <p id="host-status" class="text-white mt-4 font-bold text-center h-6">Bağlantı bekleniyor...</p>
+            <p id="host-status" class="text-white mt-4 font-bold text-center h-6">Kod oluşturuluyor...</p>
         </div>
 
         <!-- 3. Join Room Screen -->
@@ -128,7 +114,7 @@
             <p id="join-status" class="text-yellow-300 mt-4 font-bold text-center h-6"></p>
         </div>
 
-        <!-- Game Over Screen -->
+        <!-- 4. Game Over Screen -->
         <div class="screen" id="screen-gameover">
             <h1 class="game-title text-red-500 mb-4" style="text-shadow: 0 4px 0px #991b1b;">EYVAH!</h1>
             <div class="bg-white px-8 py-6 rounded-3xl text-center mb-8 shadow-2xl">
@@ -142,16 +128,17 @@
     </div>
 
 <script type="module">
+    // --- OYUN KONFİGÜRASYONU VE GLOBAL DEĞİŞKENLER ---
     const FACES = ['smile', 'neutral', 'sad'];
     const LANE_WIDTH = 3.2; 
     const BOUNDARY = LANE_WIDTH * 1.1; 
     
-    let scene, camera, renderer, trackLines;
+    let scene, camera, renderer, track, trackLines;
     let player, playerBody, leftLeg, rightLeg;
     let opponent, oppBody, oppLeftLeg, oppRightLeg;
     let playerLabel, oppLabel;
     
-    let gates = [], memoryBoards = [];
+    let gates = [], memoryBoards = [], particles = [];
     let state = 'START'; 
     let speed = 0.6; 
     let loopCount = 1;
@@ -161,17 +148,20 @@
     let levelData = { sequence: [], gates: [] };
     let currentSequenceIndex = 0;
 
+    // Multiplayer P2P State
     let peer = null, conn = null;
     let isMultiplayer = false, isHost = false;
     let oppTargetX = 0, oppTargetZ = 500, oppState = 'START';
     let myName = "Oyuncu 1", oppName = "Oyuncu 2";
 
+    // --- UI FONKSİYONLARI ---
     window.setScreen = (id) => {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         if (id) document.getElementById(id).classList.add('active');
         document.getElementById('progress-container').style.display = (id === null) ? 'block' : 'none';
     }
 
+    // --- P2P MULTIPLAYER SİSTEMİ (SUNUCUSUZ) ---
     window.showHostMenu = () => {
         myName = document.getElementById('player-name').value.trim() || "Kurucu";
         updateNameLabel(playerLabel, myName);
@@ -186,41 +176,42 @@
     }
 
     window.createRoom = async () => {
-        document.getElementById('host-room-code').innerText = "...";
+        const shortCode = Math.random().toString(36).substring(2, 6).toUpperCase();
+        const fullPeerId = `moodrun-p2p-${shortCode}`; 
+        
+        document.getElementById('host-room-code').innerText = shortCode;
         document.getElementById('host-capacity').innerText = "Oyuncu: 1/2";
         document.getElementById('btn-start-mp').classList.add('hidden');
         document.getElementById('host-status').innerText = "Oda açılıyor...";
         
         isMultiplayer = true; isHost = true;
         
-        const shortCode = Math.random().toString(36).substring(2, 6).toUpperCase();
-        const fullPeerId = `moodrun-room-${shortCode}`;
-        
         if(peer) peer.destroy();
         peer = new Peer(fullPeerId);
         
         peer.on('open', (id) => {
-            document.getElementById('host-room-code').innerText = shortCode;
-            document.getElementById('host-status').innerText = "Oda Açıldı! Arkadaşın bekleniyor...";
+            document.getElementById('host-status').innerText = "Oda Açıldı! Arkadaşının kodu girmesi bekleniyor...";
         });
 
         peer.on('connection', (connection) => {
             conn = connection;
             document.getElementById('host-capacity').innerText = "Oyuncu: 2/2";
-            document.getElementById('host-status').innerText = "Rakip bağlandı! Başlatabilirsin.";
+            document.getElementById('host-status').innerText = "Rakip bağlandı! Oyunu başlatabilirsin.";
             document.getElementById('btn-start-mp').classList.remove('hidden');
             setupConnectionListeners();
-            conn.on('open', () => conn.send({ type: 'join', name: myName }));
+            conn.on('open', () => {
+                conn.send({ type: 'join', name: myName });
+            });
         });
     }
 
     window.joinByCode = () => {
         const code = document.getElementById('manual-join-code').value.trim().toUpperCase();
-        if(!code || code.length < 4) return alert("Lütfen 4 haneli oda kodunu girin.");
+        if(!code || code.length !== 4) return alert("Lütfen 4 haneli oda kodunu girin.");
         
         isMultiplayer = true; isHost = false;
-        document.getElementById('join-status').innerText = "Koda bağlanılıyor...";
-        const fullPeerId = `moodrun-room-${code}`;
+        document.getElementById('join-status').innerText = "Odaya bağlanılıyor...";
+        const fullPeerId = `moodrun-p2p-${code}`;
         
         if(peer) peer.destroy();
         peer = new Peer();
@@ -237,7 +228,7 @@
             setupConnectionListeners();
         });
         connection.on('error', (err) => {
-            document.getElementById('join-status').innerText = "Bağlantı hatası!";
+            document.getElementById('join-status').innerText = "Bağlantı hatası veya oda bulunamadı!";
         });
     }
 
@@ -256,13 +247,14 @@
                     state = 'PLAYING';
                     opponent.position.set(0, 0, 0);
                     oppTargetZ = 0;
+                    oppState = 'PLAYING';
                 } else {
                     loopCount++;
                     speed += 0.02;
-                    spawnMemoryBoard(data.zPos - 80);
-                    spawnGateRow(data.zPos - 150, 0);
-                    spawnGateRow(data.zPos - 220, 1);
-                    spawnGateRow(data.zPos - 290, 2);
+                    spawnMemoryBoard(data.zPos - 100);
+                    spawnGateRow(data.zPos - 220, 0);
+                    spawnGateRow(data.zPos - 320, 1);
+                    spawnGateRow(data.zPos - 420, 2);
                 }
                 updateProgressBar();
             } else if (data.type === 'sync') {
@@ -276,6 +268,7 @@
                 if(gateToDrop) {
                     gateToDrop.userData.passed = true;
                     gateToDrop.position.y -= 100;
+                    createParticles(gateToDrop.position);
                 }
             }
         });
@@ -283,17 +276,17 @@
 
     window.startMultiplayer = () => {
         if(!isHost || !conn || !conn.open) return;
-        try {
-            generateLevelData();
-            conn.send({ type: 'start', level: levelData });
-            resetPlayerAndWorld();
-            setScreen(null);
-            state = 'PLAYING';
-            opponent.position.set(0, 0, 0);
-            oppTargetZ = 0;
-        } catch(e) {
-            console.error("Hata: ", e);
-        }
+        generateLevelData();
+        
+        // Önce rakibe gönder, sonra lokalde başlat
+        conn.send({ type: 'start', level: levelData });
+        
+        resetPlayerAndWorld();
+        setScreen(null);
+        state = 'PLAYING';
+        opponent.position.set(0, 0, 0);
+        oppTargetZ = 0;
+        oppState = 'PLAYING';
     }
 
     window.startSolo = () => {
@@ -307,6 +300,7 @@
         opponent.position.set(0, -100, 500); 
     }
 
+    // --- 3D OYUN MOTORU ---
     init();
     animate();
 
@@ -314,10 +308,10 @@
         const container = document.getElementById('game-container');
         scene = new THREE.Scene();
         scene.background = new THREE.Color(0x3b82f6); 
-        scene.fog = new THREE.Fog(0x3b82f6, 40, 180); 
+        scene.fog = new THREE.Fog(0x3b82f6, 40, 200); 
 
-        camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 250);
-        camera.position.set(0, 7, 12); 
+        camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 300);
+        camera.position.set(0, 7, 14); 
         
         renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -334,8 +328,6 @@
         dirLight.position.set(-15, 25, 10);
         dirLight.castShadow = true;
         dirLight.shadow.mapSize.width = 1024; dirLight.shadow.mapSize.height = 1024;
-        dirLight.shadow.camera.top = 20; dirLight.shadow.camera.bottom = -20;
-        dirLight.shadow.camera.left = -15; dirLight.shadow.camera.right = 15;
         scene.add(dirLight);
 
         createTrack();
@@ -356,8 +348,8 @@
     function createTrack() {
         const geometry = new THREE.BoxGeometry(LANE_WIDTH * 3 + 2, 1, 3000);
         const material = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.1 });
-        const track = new THREE.Mesh(geometry, material);
-        track.position.set(0, -0.5, -1450);
+        track = new THREE.Mesh(geometry, material);
+        track.position.set(0, -0.5, 0);
         track.receiveShadow = true;
         scene.add(track);
 
@@ -365,9 +357,9 @@
         const lineMat = new THREE.MeshBasicMaterial({ color: 0x94a3b8 });
         trackLines = new THREE.Group();
         const line1 = new THREE.Mesh(lineGeo, lineMat);
-        line1.position.set(-LANE_WIDTH/2, 0.02, -1450); line1.rotation.x = -Math.PI / 2;
+        line1.position.set(-LANE_WIDTH/2, 0.02, 0); line1.rotation.x = -Math.PI / 2;
         const line2 = new THREE.Mesh(lineGeo, lineMat);
-        line2.position.set(LANE_WIDTH/2, 0.02, -1450); line2.rotation.x = -Math.PI / 2;
+        line2.position.set(LANE_WIDTH/2, 0.02, 0); line2.rotation.x = -Math.PI / 2;
         trackLines.add(line1); trackLines.add(line2);
         scene.add(trackLines);
     }
@@ -397,7 +389,7 @@
         const canvas = document.createElement('canvas');
         canvas.width = 256; canvas.height = 64;
         const context = canvas.getContext('2d');
-        context.font = "Bold 36px 'Varela Round', sans-serif";
+        context.font = "Bold 40px 'Varela Round', sans-serif";
         context.fillStyle = color;
         context.textAlign = "center";
         context.fillText(text, 128, 48);
@@ -412,30 +404,29 @@
     function updateNameLabel(sprite, name) {
         const context = sprite.material.map.image.getContext('2d');
         context.clearRect(0, 0, 256, 64);
+        context.fillStyle = sprite.material.map.image.dataset.color || '#ffffff';
         context.fillText(name, 128, 48);
         sprite.material.map.needsUpdate = true;
     }
 
     function setupPlayers() {
-        const myChar = createCharacterConfig(0xef4444);
+        const myChar = createCharacterConfig(0xef4444); 
         player = myChar.root; playerBody = myChar.body; leftLeg = myChar.leftLeg; rightLeg = myChar.rightLeg;
         playerLabel = createTextSprite("Sen", "#ffffff");
+        playerLabel.material.map.image.dataset.color = "#ffffff";
         player.add(playerLabel);
         scene.add(player);
 
-        const oppChar = createCharacterConfig(0x3b82f6);
+        const oppChar = createCharacterConfig(0x0ea5e9); 
         opponent = oppChar.root; oppBody = oppChar.body; oppLeftLeg = oppChar.leftLeg; oppRightLeg = oppChar.rightLeg;
-        oppLabel = createTextSprite("Rakip", "#yellow");
+        oppLabel = createTextSprite("Rakip", "#facc15"); 
+        oppLabel.material.map.image.dataset.color = "#facc15";
         opponent.add(oppLabel);
-        opponent.position.set(0, -100, 500); // Hide initially
+        opponent.position.set(0, -100, 500); 
         scene.add(opponent);
     }
 
-    function createFaceTexture(type, isMemoryBoard = false) {
-        const canvas = document.createElement('canvas');
-        canvas.width = 512; canvas.height = 512;
-        const ctx = canvas.getContext('2d');
-        
+    function drawCustomFace(ctx, type, isMemoryBoard) {
         ctx.fillStyle = isMemoryBoard ? 'transparent' : 'rgba(255, 255, 255, 0.9)';
         if(!isMemoryBoard) {
             ctx.beginPath(); ctx.roundRect(20, 20, 472, 472, 80); ctx.fill();
@@ -446,17 +437,25 @@
         ctx.strokeStyle = isMemoryBoard ? '#ffffff' : '#1e293b';
         ctx.fillStyle = isMemoryBoard ? '#ffffff' : '#1e293b';
         
-        // Eyes
         ctx.beginPath(); ctx.arc(170, 200, 25, 0, Math.PI * 2); ctx.fill();
         ctx.beginPath(); ctx.arc(342, 200, 25, 0, Math.PI * 2); ctx.fill();
 
-        // Mouth
         ctx.beginPath();
-        if (type === 'smile') ctx.arc(256, 260, 110, 0.1 * Math.PI, 0.9 * Math.PI);
-        else if (type === 'sad') ctx.arc(256, 390, 110, 1.1 * Math.PI, 1.9 * Math.PI);
-        else if (type === 'neutral') { ctx.moveTo(160, 310); ctx.lineTo(352, 310); }
+        if (type === 'smile') {
+            ctx.arc(256, 260, 110, 0.1 * Math.PI, 0.9 * Math.PI);
+        } else if (type === 'sad') {
+            ctx.arc(256, 390, 110, 1.1 * Math.PI, 1.9 * Math.PI);
+        } else if (type === 'neutral') { 
+            ctx.moveTo(160, 310); ctx.lineTo(352, 310); 
+        }
         ctx.stroke();
+    }
 
+    function createFaceTexture(type, isMemoryBoard = false) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 512; canvas.height = 512;
+        const ctx = canvas.getContext('2d');
+        drawCustomFace(ctx, type, isMemoryBoard);
         const texture = new THREE.CanvasTexture(canvas);
         texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
         return texture;
@@ -468,7 +467,7 @@
         
         for (let i = 0; i < 3; i++) {
             levelData.sequence.push(FACES[Math.floor(Math.random() * FACES.length)]);
-            let rowFaces = [...FACES].sort(() => Math.random() - 0.5);
+            let rowFaces = [...FACES].sort(() => Math.random() - 0.5); 
             levelData.gates.push(rowFaces);
         }
     }
@@ -485,12 +484,16 @@
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 70px "Fredoka One", sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(`AŞAMA ${loopCount}: SIRAYI HATIRLA!`, 512, 120);
+        ctx.fillText(`SIRAYI HATIRLA!`, 512, 120);
 
         const startX = 180; const spacing = 330;
         levelData.sequence.forEach((face, index) => {
-            const faceCanvas = createFaceTexture(face, true).image;
-            ctx.drawImage(faceCanvas, startX + (index * spacing) - 100, 180, 200, 200);
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = 512; tempCanvas.height = 512;
+            const tCtx = tempCanvas.getContext('2d');
+            drawCustomFace(tCtx, face, true);
+            
+            ctx.drawImage(tempCanvas, startX + (index * spacing) - 100, 180, 200, 200);
             if(index < 2) {
                 ctx.fillStyle = '#facc15'; ctx.font = 'bold 80px sans-serif';
                 ctx.fillText('→', startX + (index * spacing) + 165, 300);
@@ -503,7 +506,7 @@
         const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true });
         const board = new THREE.Mesh(geo, mat);
         
-        board.position.set(0, 5.5, zPos);
+        board.position.set(0, 6, zPos);
         scene.add(board);
         memoryBoards.push(board);
     }
@@ -543,6 +546,21 @@
         gates.push(row);
     }
 
+    function createParticles(position) {
+        const geo = new THREE.BoxGeometry(0.3, 0.3, 0.3);
+        const mat = new THREE.MeshStandardMaterial({color: 0x4ade80});
+        for(let i=0; i<15; i++) {
+            const p = new THREE.Mesh(geo, mat);
+            p.position.copy(position); p.position.y += 2;
+            p.position.x += (Math.random() - 0.5) * 3;
+            p.userData = {
+                vx: (Math.random() - 0.5) * 0.4, vy: Math.random() * 0.4 + 0.2, vz: (Math.random() - 0.5) * 0.4,
+                life: 1.0
+            };
+            scene.add(p); particles.push(p);
+        }
+    }
+
     function updateProgressBar() {
         document.getElementById('progress-fill').style.width = `${(currentSequenceIndex / 3) * 100}%`;
     }
@@ -553,11 +571,12 @@
         
         gates.forEach(g => scene.remove(g)); gates = [];
         memoryBoards.forEach(b => scene.remove(b)); memoryBoards = [];
+        particles.forEach(p => scene.remove(p)); particles = [];
 
-        spawnMemoryBoard(-80);
-        spawnGateRow(-150, 0);
-        spawnGateRow(-220, 1);
-        spawnGateRow(-290, 2);
+        spawnMemoryBoard(-100);
+        spawnGateRow(-220, 0);
+        spawnGateRow(-320, 1);
+        spawnGateRow(-420, 2);
         updateProgressBar();
     }
 
@@ -582,14 +601,18 @@
         setScreen('screen-gameover');
     }
 
-    window.resetGame = () => {
-        // Simple reload to reset state fully
-        window.location.reload();
-    }
+    window.resetGame = () => { window.location.reload(); }
 
     function animate() {
         requestAnimationFrame(animate);
 
+        // SONSUNZ YOL SİSTEMİ (Zemin her zaman oyuncuyu takip eder, asla bitmez)
+        if(track && trackLines) {
+            track.position.z = player.position.z;
+            trackLines.position.z = player.position.z;
+        }
+
+        // Network P2P Sync Gönderimi
         if (isMultiplayer && conn && conn.open) {
             conn.send({ type: 'sync', x: player.position.x, z: player.position.z, st: state });
         }
@@ -604,20 +627,20 @@
             leftLeg.rotation.x = Math.sin(runTime) * 0.8; rightLeg.rotation.x = -Math.sin(runTime) * 0.8;
             leftLeg.position.y = 0.45 + Math.abs(Math.sin(runTime)) * 0.3; rightLeg.position.y = 0.45 + Math.abs(Math.cos(runTime)) * 0.3;
 
-            // Endless Loop Trigger
+            // Sonsuz Döngü Tetikleyicisi
             if (currentSequenceIndex >= 3) {
                 loopCount++; speed += 0.02;
                 if(isHost || !isMultiplayer) {
                     generateLevelData();
                     const nextZ = player.position.z;
-                    spawnMemoryBoard(nextZ - 80);
-                    spawnGateRow(nextZ - 150, 0); spawnGateRow(nextZ - 220, 1); spawnGateRow(nextZ - 290, 2);
+                    spawnMemoryBoard(nextZ - 100);
+                    spawnGateRow(nextZ - 220, 0); spawnGateRow(nextZ - 320, 1); spawnGateRow(nextZ - 420, 2);
                     if(isMultiplayer) conn.send({ type: 'new_loop', level: levelData, zPos: nextZ });
                 }
                 currentSequenceIndex = 0; updateProgressBar();
             }
 
-            // Collision Check
+            // Çarpışma (Collision) Testi
             for (let i = 0; i < gates.length; i++) {
                 const row = gates[i];
                 if (row.position.z > player.position.z - 1.0 && row.position.z < player.position.z + 1.0) {
@@ -635,6 +658,7 @@
                         const requiredFace = levelData.sequence[row.userData.seqIndex];
                         if (hitFace === requiredFace) {
                             row.userData.passed = true; row.position.y -= 100;
+                            createParticles(row.position);
                             currentSequenceIndex = Math.max(currentSequenceIndex, row.userData.seqIndex + 1);
                             updateProgressBar();
                             if(isMultiplayer && conn) conn.send({ type: 'gate_passed', index: row.userData.seqIndex });
@@ -646,16 +670,11 @@
                 }
             }
 
-            // Memory Board Fly Away
             memoryBoards.forEach(b => { if(player.position.z < b.position.z) b.position.y += 0.5; });
 
-            // Cleanup old objects
-            if(gates.length > 6) {
-                const oldG = gates.shift(); scene.remove(oldG);
-            }
-            if(memoryBoards.length > 2) {
-                const oldB = memoryBoards.shift(); scene.remove(oldB);
-            }
+            // Eski objeleri temizle
+            if(gates.length > 6) { const oldG = gates.shift(); scene.remove(oldG); }
+            if(memoryBoards.length > 2) { const oldB = memoryBoards.shift(); scene.remove(oldB); }
 
         } else if (state === 'GAMEOVER') {
             if (playerBody.rotation.x > -Math.PI / 2) {
@@ -664,25 +683,42 @@
             }
         }
 
-        // Multiplayer Visual Sync
+        // --- RAKİP (OPPONENT) YÖNETİMİ ---
         if (isMultiplayer && opponent) {
+            // Şerit geçişi yumuşak olsun
             opponent.position.x += (oppTargetX - opponent.position.x) * 0.3;
-            // Snappy Z sync to prevent desync look
-            if(Math.abs(oppTargetZ - opponent.position.z) > 10) opponent.position.z = oppTargetZ;
-            else opponent.position.z += (oppTargetZ - opponent.position.z) * 0.3;
 
             if (oppState === 'PLAYING') {
+                // MUHTEŞEM Z-SYNC: Network gecikmesini çöpe atıyoruz. 
+                // Kurucu her zaman çok ufak bir farkla (0.05) önde gözükür, yan yana hissiyatı kusursuzlaşır.
+                if (isHost) {
+                    opponent.position.z = player.position.z + 0.05; // Kurucu isen, rakip gerinde
+                } else {
+                    opponent.position.z = player.position.z - 0.05; // Katılımcı isen, kurucu önünde
+                }
+
                 oppRunTime += 0.15; oppBody.rotation.x = 0;
                 oppBody.position.y = Math.abs(Math.sin(oppRunTime)) * 0.2;
                 oppLeftLeg.rotation.x = Math.sin(oppRunTime) * 0.8; oppRightLeg.rotation.x = -Math.sin(oppRunTime) * 0.8;
             } else if (oppState === 'GAMEOVER') {
+                // Ölüm anında rakip sadece gerçek öldüğü Z lokasyonunda kalsın (Yere Düşsün)
+                opponent.position.z = oppTargetZ;
                 oppBody.rotation.x = -Math.PI / 2; oppBody.position.y = 0.2;
             }
         }
 
-        // Camera & Lights
-        camera.position.z += ((player.position.z + 8) - camera.position.z) * 0.15;
-        camera.position.x += ((player.position.x * 0.4) - camera.position.x) * 0.15;
+        // Partikül Fizikleri
+        for(let i=particles.length-1; i>=0; i--){
+            let p = particles[i];
+            p.position.x += p.userData.vx; p.position.y += p.userData.vy; p.position.z += p.userData.vz;
+            p.userData.vy -= 0.01; p.userData.life -= 0.02;
+            p.scale.setScalar(Math.max(0, p.userData.life));
+            if(p.userData.life <= 0) { scene.remove(p); particles.splice(i, 1); }
+        }
+
+        // Kamera Takibi
+        camera.position.z += ((player.position.z + 10) - camera.position.z) * 0.15;
+        camera.position.x += ((player.position.x * 0.3) - camera.position.x) * 0.15;
         camera.lookAt(player.position.x * 0.2, 2, player.position.z - 10);
 
         scene.children.forEach(child => {
