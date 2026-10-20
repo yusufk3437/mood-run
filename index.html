@@ -1,20 +1,3 @@
-İsteklerinizi tek tek not aldım. Oyunun görselliğini çok daha canlı, rengarenk ve akıcı hale getirdim. Karakterin ışınlanma/kasıntı yapmasını engellemek için Floating Origin (Kayan Merkez) tekniği kullandım ve zemini sonsuz kayan bir dokuya dönüştürdüm.
-
-İşte yaptığım değişikliklerin özeti:
-
-1. Görsellik: Arka plan artık tek renk değil, dinamik bir gökkuşağı/siberpunk degrade. Zemin sonsuz kayan bir dama tahtası/neon doku oldu. Geçitler rengarenk (pembe, mavi, yeşil, mor) yapıldı.
-2. Hız ve Akış: Zemin artık kaydığı için "takılma" hissi tamamen bitti. Geçitler arası mesafe kısaltıldı ve oyun hızı her turda tatlı bir şekilde artacak şekilde ayarlandı (insan üstü bir hıza çıkmıyor, belli bir yerde sabitleniyor).
-3. Yeni Özellikler:
-   · Dil Desteği: Türkçe / İngilizce seçeneği eklendi.
-   · Skinler (Kostümler): Puan ile satın alınabilen renkler eklendi.
-   · Günlük Ödül: Her gün girişte puan kazanma sistemi.
-   · Reklam Butonları: Puan veya Skin kazanmak için sahte (simüle edilmiş) 3 saniyelik reklam izleme butonları.
-   · Puan Sistemi: Geçitlerden geçtikçe para/puan kazanıyorsunuz.
-4. İptaller/Değişiklikler: "Çıkış" butonu ve menüsü kaldırıldı. Ölünce çıkan iskelet emojisi (💀) ve diğer emojiler kaldırıldı, yerine modern yazılar/ikonlar eklendi.
-
-İşte kodunuzun tamamen güncellenmiş, istediğiniz gibi renklendirilmiş ve özellikleri eklenmiş hali:
-
-```html
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -25,12 +8,19 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://unpkg.com/peerjs@1.5.1/dist/peerjs.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Varela+Round&display=swap');
+        /* LOVELO FONT EKLENDİ */
+        @import url('https://fonts.cdnfonts.com/css/lovelo');
         
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
-            background-color: #4f46e5; font-family: 'Varela Round', sans-serif;
+            background-color: #4f46e5; 
+            font-family: 'Lovelo', 'Varela Round', sans-serif !important;
             touch-action: none; user-select: none; -webkit-user-select: none;
+        }
+
+        /* Lovelo fontunu tüm metinlere zorla */
+        .game-title, .btn, h1, h2, h3, p, span, div {
+            font-family: 'Lovelo', 'Varela Round', sans-serif;
         }
 
         #game-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
@@ -51,12 +41,12 @@
         .screen.active { opacity: 1; visibility: visible; }
 
         .game-title {
-            font-family: 'Fredoka One', cursive; text-shadow: 0 4px 10px rgba(0,0,0,0.4);
+            text-shadow: 0 4px 10px rgba(0,0,0,0.4);
             font-size: 3.5rem; line-height: 1.1; text-align: center; color: white;
         }
 
         .btn {
-            font-family: 'Fredoka One', cursive; border: none; color: white; padding: 14px 28px;
+            border: none; color: white; padding: 14px 28px;
             font-size: 18px; border-radius: 30px; cursor: pointer;
             transition: transform 0.1s; text-transform: uppercase; pointer-events: auto;
             width: 100%; text-align: center; display: flex; justify-content: center; align-items: center; gap: 8px;
@@ -78,7 +68,6 @@
         }
         .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #4ade80, #22c55e); border-radius: 8px; transition: width 0.3s; }
 
-        /* Ad Overlay */
         #ad-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.9); z-index: 100; display: none;
@@ -88,7 +77,6 @@
             background: #1f2937; padding: 40px; border-radius: 20px; text-align: center; border: 2px solid #3b82f6;
         }
 
-        /* Skins Grid */
         .skin-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; width: 100%; max-height: 300px; overflow-y: auto; padding: 10px; }
         .skin-item { background: rgba(255,255,255,0.1); border: 2px solid transparent; border-radius: 15px; padding: 10px; text-align: center; cursor: pointer; transition: 0.2s; }
         .skin-item.selected { border-color: #facc15; background: rgba(250, 204, 21, 0.2); }
@@ -102,7 +90,6 @@
     <div id="game-container"></div>
     <div id="toast" style="position:absolute;top:70px;left:50%;transform:translateX(-50%);z-index:30;background:rgba(0,0,0,.75);color:#fff;padding:8px 16px;border-radius:16px;font-weight:bold;display:none;max-width:90%;text-align:center;pointer-events:none"></div>
     
-    <!-- Ad Overlay -->
     <div id="ad-overlay">
         <div class="ad-box">
             <h2 class="text-3xl font-black mb-4 text-blue-400">Reklam İzleniyor / Playing Ad</h2>
@@ -116,13 +103,11 @@
             <div class="progress-fill" id="progress-fill"></div>
         </div>
 
-        <!-- Splash -->
         <div class="screen active" id="screen-splash" style="background:linear-gradient(135deg,#4f46e5,#9333ea);" onclick="setScreen('screen-menu')">
             <h1 class="game-title" style="font-size: 4rem;">MOOD RUN</h1>
             <div class="game-title" style="font-size:2rem;letter-spacing:.2em;margin-top:-6px;color:#facc15">3D</div>
         </div>
 
-        <!-- Main Menu -->
         <div class="screen" id="screen-menu">
             <div class="absolute top-4 right-4 flex gap-2">
                 <button class="btn bg-gray-700 shadow-[0_4px_0_#374151] !w-auto !py-2 !px-4 text-sm" onclick="toggleLang()" id="lang-btn">TR/EN</button>
@@ -142,7 +127,6 @@
             </div>
         </div>
 
-        <!-- Skins -->
         <div class="screen" id="screen-skins">
             <h2 class="text-3xl font-black text-white mb-2" data-i18n="skins">SKİNLER</h2>
             <div class="coin-badge mb-4"><span id="skin-coins">0</span> POINTS</div>
@@ -153,10 +137,9 @@
             </div>
         </div>
 
-        <!-- Name (asked once) -->
         <div class="screen" id="screen-name">
             <h2 class="text-3xl font-black text-white mb-2 text-center" data-i18n="nameQ">İsmin ne?</h2>
-            <p class="text-white/70 text-sm font-bold mb-6 text-center px-8" data-i18n="nameDesc">Bu isim kaydedilecek ve sonradan değiştirilemeyecek.</p>
+            <p class="text-white/70 text-sm font-bold mb-6 text-center px-8" data-i18n="nameDesc">Bu isim kaydedilecek.</p>
             <div class="w-72">
                 <input type="text" id="name-input" class="input-field" maxlength="12" placeholder="İsmini yaz" autocomplete="off">
                 <p id="name-error" class="text-yellow-300 text-sm font-bold text-center h-5 mb-2"></p>
@@ -164,7 +147,6 @@
             </div>
         </div>
 
-        <!-- Mode -->
         <div class="screen" id="screen-mode">
             <h2 class="text-3xl font-black text-white mb-6" data-i18n="play">OYNA</h2>
             <div class="flex flex-col gap-4 w-72">
@@ -174,7 +156,6 @@
             </div>
         </div>
 
-        <!-- Multiplayer -->
         <div class="screen" id="screen-multi">
             <h2 class="text-3xl font-black text-white mb-6" data-i18n="multi">ÇOK OYUNCULU</h2>
             <div class="flex flex-col gap-4 w-72">
@@ -184,7 +165,6 @@
             </div>
         </div>
 
-        <!-- Settings -->
         <div class="screen" id="screen-settings">
             <h2 class="text-3xl font-black text-white mb-6" data-i18n="settings">AYARLAR</h2>
             <div class="flex flex-col gap-4 w-72">
@@ -195,7 +175,6 @@
             </div>
         </div>
 
-        <!-- Host Room -->
         <div class="screen" id="screen-host">
             <h2 class="text-3xl font-black text-white mb-6" data-i18n="createRoom">ODA KUR</h2>
             <div class="bg-white/20 p-6 rounded-3xl border border-white/30 text-center w-80 backdrop-blur-sm">
@@ -210,7 +189,6 @@
             <p id="host-status" class="text-white mt-4 font-bold text-center h-6" data-i18n="opening">Oda açılıyor...</p>
         </div>
 
-        <!-- Join Room -->
         <div class="screen" id="screen-join">
             <h2 class="text-3xl font-black text-white mb-6" data-i18n="joinRoom">ODAYA KATIL</h2>
             <div class="bg-white/10 p-6 rounded-3xl border border-white/20 w-80 backdrop-blur-sm">
@@ -222,7 +200,6 @@
             <p id="join-status" class="text-yellow-300 mt-4 font-bold text-center h-6"></p>
         </div>
 
-        <!-- Game Over -->
         <div class="screen" id="screen-gameover">
             <h1 class="game-title text-red-500 mb-4" style="text-shadow: 0 4px 0px #991b1b;" data-i18n="failed">KAYBETTİN!</h1>
             <div class="bg-white px-8 py-6 rounded-3xl text-center mb-8 shadow-2xl">
@@ -239,7 +216,6 @@
     </div>
 
 <script type="module">
-    // --- POLYFILL ---
     if (!CanvasRenderingContext2D.prototype.roundRect) {
         CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
             r = Math.min(typeof r === 'number' ? r : 0, w / 2, h / 2);
@@ -248,7 +224,6 @@
         };
     }
 
-    // --- LOCALIZATION ---
     const translations = {
         tr: {
             play: "OYNA", skins: "SKİNLER", settings: "AYARLAR", daily: "GÜNLÜK ÖDÜL", watchAd: "REKLAM İZLE +100", back: "GERİ",
@@ -290,7 +265,6 @@
         renderSkins();
     }
 
-    // --- STORAGE & DATA ---
     const store = {
         get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } },
         set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
@@ -302,7 +276,6 @@
     let totalPoints = parseInt(store.get('kado_points', '0')) || 0;
     let lastDaily = store.get('kado_daily', '0');
     
-    // Skins System
     const SKINS = [
         { id: 'red', color: 0xef4444, price: 0 },
         { id: 'blue', color: 0x3b82f6, price: 100 },
@@ -319,7 +292,6 @@
     };
     window.updatePointsUI();
 
-    // --- AUDIO/VIBRATION ---
     let audioCtx = null;
     function beep(freq, dur) {
         if (!soundOn) return;
@@ -333,7 +305,6 @@
     }
     function buzz(ms) { if (vibOn && navigator.vibrate) navigator.vibrate(ms); }
 
-    // --- UI HANDLERS ---
     window.setScreen = (id) => {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         if (id) document.getElementById(id).classList.add('active');
@@ -364,7 +335,6 @@
         refreshSettings();
     };
 
-    // --- DAILY REWARD ---
     window.claimDaily = () => {
         const today = new Date().toDateString();
         if (lastDaily === today) {
@@ -378,11 +348,7 @@
         beep(800, 0.2);
     };
 
-    // --- SKINS ---
-    window.openSkins = () => {
-        renderSkins();
-        setScreen('screen-skins');
-    };
+    window.openSkins = () => { renderSkins(); setScreen('screen-skins'); };
 
     function renderSkins() {
         const list = document.getElementById('skin-list');
@@ -427,7 +393,6 @@
         }
     }
 
-    // --- AD SIMULATION ---
     window.watchAdForPoints = () => {
         document.getElementById('ad-overlay').style.display = 'flex';
         let time = 3;
@@ -454,11 +419,10 @@
         showToast.h = setTimeout(() => { t.style.display = 'none'; }, ms);
     }
 
-    // --- GAME ENGINE SETUP ---
     const FACES = ['smile', 'neutral', 'sad'];
     const LANE_WIDTH = 3.2; 
     const BOUNDARY = LANE_WIDTH * 1.1; 
-    const LOOP_LEN = 350; // Kısaltıldı, akış hızlandı
+    const LOOP_LEN = 350; 
     
     let scene, camera, renderer, trackMesh, trackTexture;
     let player, playerBody, leftLeg, rightLeg;
@@ -477,7 +441,6 @@
     let lastSync = 0, round = 0, lastFrame = 0;
     let score = 0;
 
-    // P2P
     let peer = null, conn = null;
     let seed = 1, spawnedLoops = 0, currentLoopIdx = 0, currentSequenceIndex = 0;
 
@@ -489,7 +452,6 @@
     function init() {
         const container = document.getElementById('game-container');
         scene = new THREE.Scene();
-        // Arka plan rengi ve sis (Neon/Siberpunk havası)
         scene.background = new THREE.Color(0x1e1b4b); 
         scene.fog = new THREE.Fog(0x1e1b4b, 30, 120); 
 
@@ -518,24 +480,23 @@
 
         window.addEventListener('resize', onWindowResize);
         
-        const inputArea = document.body;
-        inputArea.addEventListener('mousedown', onPointerDown);
-        inputArea.addEventListener('mousemove', onPointerMove);
-        inputArea.addEventListener('mouseup', onPointerUp);
-        inputArea.addEventListener('mouseleave', onPointerUp);
-        inputArea.addEventListener('touchstart', onPointerDown, {passive: false});
-        inputArea.addEventListener('touchmove', onPointerMove, {passive: false});
-        inputArea.addEventListener('touchend', onPointerUp);
+        // WINDOW ÜZERİNDEN DİNLEME (Mobil ve PC uyumluluğu için)
+        window.addEventListener('mousedown', onPointerDown);
+        window.addEventListener('mousemove', onPointerMove);
+        window.addEventListener('mouseup', onPointerUp);
+        window.addEventListener('mouseleave', onPointerUp);
+        window.addEventListener('touchstart', onPointerDown, {passive: false});
+        window.addEventListener('touchmove', onPointerMove, {passive: false});
+        window.addEventListener('touchend', onPointerUp);
     }
 
     function createTrack() {
-        // Sonsuz kayan zemin (Dama tahtası deseni)
         const canvas = document.createElement('canvas');
         canvas.width = 512; canvas.height = 512;
         const ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#2e1065'; // Koyu mor
+        ctx.fillStyle = '#2e1065'; 
         ctx.fillRect(0, 0, 512, 512);
-        ctx.fillStyle = '#4c1d95'; // Açık mor
+        ctx.fillStyle = '#4c1d95'; 
         ctx.fillRect(0, 0, 256, 256);
         ctx.fillRect(256, 256, 256, 256);
         
@@ -605,7 +566,7 @@
         const canvas = document.createElement('canvas');
         canvas.width = 256; canvas.height = 64;
         const context = canvas.getContext('2d');
-        context.font = "Bold 40px 'Varela Round', sans-serif";
+        context.font = "Bold 40px 'Lovelo', sans-serif";
         context.fillStyle = color;
         context.textAlign = "center";
         context.fillText(text, 128, 48);
@@ -661,12 +622,22 @@
         const rng = mulberry32((seed + k * 7919) >>> 0);
         const sequence = [], rows = [];
         for (let i = 0; i < 3; i++) {
-            sequence.push(FACES[Math.floor(rng() * FACES.length)]);
+            const req = FACES[Math.floor(rng() * FACES.length)];
+            sequence.push(req);
             const row = [...FACES];
             for (let j = row.length - 1; j > 0; j--) {
                 const r = Math.floor(rng() * (j + 1));
                 [row[j], row[r]] = [row[r], row[j]];
             }
+            
+            // BAŞLANGIÇ KOLAYLIĞI: İlk turda orta şerit her zaman doğru cevap.
+            if (k === 0) {
+                row[1] = req;
+                const others = FACES.filter(f => f !== req);
+                row[0] = others[0];
+                row[2] = others[1];
+            }
+            
             rows.push(row);
         }
         return { sequence, gates: rows };
@@ -691,7 +662,7 @@
         ctx.lineWidth = 15; ctx.strokeStyle = '#60a5fa'; ctx.stroke();
 
         ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 70px "Fredoka One", sans-serif';
+        ctx.font = 'bold 70px "Lovelo", sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText(`REMEMBER THE ORDER!`, 512, 120);
 
@@ -725,8 +696,6 @@
         const rowFaces = data.gates[seqIndex];
         const gateWidth = LANE_WIDTH * 0.95;
         const gateHeight = 4.5;
-
-        // Rengarenk geçitler
         const gateColors = [0xec4899, 0x3b82f6, 0x10b981]; 
 
         for(let i=0; i<3; i++) {
@@ -773,7 +742,7 @@
 
     function resetPlayerAndWorld() {
         player.position.set(0, 0, 0); playerBody.rotation.set(0,0,0);
-        targetX = 0; loopCount = 1; speed = 0.8; // Hız biraz daha artırıldı
+        targetX = 0; loopCount = 1; speed = 0.8; 
         currentSequenceIndex = 0; currentLoopIdx = 0;
         
         gates.forEach(g => scene.remove(g)); gates = [];
@@ -785,7 +754,13 @@
         updateProgressBar();
     }
 
-    function onPointerDown(e) { if (state === 'PLAYING') { isDragging = true; previousPointerX = e.touches ? e.touches[0].clientX : e.clientX; } }
+    function onPointerDown(e) { 
+        if (state === 'PLAYING') { 
+            isDragging = true; 
+            previousPointerX = e.touches ? e.touches[0].clientX : e.clientX; 
+            if (e.touches) e.preventDefault(); 
+        } 
+    }
     function onPointerMove(e) {
         if (!isDragging || state !== 'PLAYING') return;
         const currentX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -793,8 +768,10 @@
         targetX += deltaX * ((LANE_WIDTH * 2) / window.innerWidth * 1.5);
         targetX = Math.max(-BOUNDARY, Math.min(BOUNDARY, targetX));
         previousPointerX = currentX;
+        if (e.touches) e.preventDefault(); 
     }
     function onPointerUp(e) { isDragging = false; }
+    
     function onWindowResize() {
         camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -805,7 +782,6 @@
         state = 'GAMEOVER'; isDragging = false;
         document.getElementById('fail-blame').innerText = `${blameName} ${currentLang === 'tr' ? 'HATA YAPTI!' : 'FAILED!'}`;
         
-        // Puan ekleme (Skor başına 5 puan)
         totalPoints += score * 5;
         store.set('kado_points', totalPoints);
         updatePointsUI();
@@ -827,7 +803,6 @@
         setScreen('screen-menu');
     };
 
-    // --- P2P MULTIPLAYER (Serverless) ---
     window.showHostMenu = () => {
         myName = savedName;
         setScreen('screen-host');
@@ -928,11 +903,18 @@
         startRound(s, round + 1);
         conn.send({ type: 'start', seed: s, round: round });
     };
+    
     window.startSolo = () => {
-        isMultiplayer = false;
-        myName = savedName;
-        startRound(Math.floor(Math.random() * 1e9), round + 1);
+        try {
+            if (!scene || !player) return showToast("Oyun yükleniyor, lütfen bekleyin...");
+            isMultiplayer = false;
+            myName = savedName || "Player";
+            startRound(Math.floor(Math.random() * 1e9), round + 1);
+        } catch(e) {
+            showToast("Hata: " + e.message);
+        }
     };
+    
     window.playAgain = () => {
         if (!isMultiplayer) window.startSolo();
         else if (isHost) window.startMultiplayer();
@@ -943,14 +925,12 @@
         setScreen('screen-multi');
     };
 
-    // --- ANA DÖNGÜ (Floating Origin & Hızlandırma) ---
     function animate() {
         requestAnimationFrame(animate);
         const nowT = performance.now();
         const f = Math.min((nowT - (lastFrame || nowT)) / 16.667, 3); 
         lastFrame = nowT;
 
-        // Zemini kaydırma (Sonsuz akış)
         if(trackTexture) {
             trackTexture.offset.y += speed * 0.005 * f;
         }
@@ -963,7 +943,6 @@
         if (state === 'PLAYING') {
             runTime += 0.15 * f;
             
-            // Floating Origin (Sayısal kaymayı ve kasıntıyı önler)
             if (player.position.z < -500) {
                 const shift = 500;
                 player.position.z += shift;
@@ -972,7 +951,7 @@
             }
 
             const prevZ = player.position.z;
-            player.position.z -= speed * f * 1.5; // Gerçek hız hissi
+            player.position.z -= speed * f * 1.5; 
             player.position.x += (targetX - player.position.x) * (1 - Math.pow(0.8, f)); 
 
             playerBody.position.y = Math.abs(Math.sin(runTime)) * 0.2;
@@ -980,20 +959,17 @@
             leftLeg.rotation.x = Math.sin(runTime) * 0.8; rightLeg.rotation.x = -Math.sin(runTime) * 0.8;
             leftLeg.position.y = 0.45 + Math.abs(Math.sin(runTime)) * 0.3; rightLeg.position.y = 0.45 + Math.abs(Math.cos(runTime)) * 0.3;
 
-            // Sürekli bölüm üret
             while (player.position.z < -(spawnedLoops - 1) * LOOP_LEN - 200) {
                 spawnLoop(spawnedLoops); spawnedLoops++;
             }
 
-            // Hızlanma mantığı (Çok yavaş değil, çok hızlı değil)
             const idx = Math.max(0, Math.floor(-player.position.z / LOOP_LEN));
             if (idx !== currentLoopIdx) {
                 currentLoopIdx = idx; loopCount = idx + 1;
-                speed = Math.min(2.2, 0.8 + 0.08 * idx); // Hız her aşamada artar ama 2.2'de durur
+                speed = Math.min(2.2, 0.8 + 0.08 * idx); 
                 currentSequenceIndex = 0; updateProgressBar();
             }
 
-            // Çarpışma testi
             for (let i = 0; i < gates.length; i++) {
                 const row = gates[i];
                 if (row.position.z > player.position.z - 1.0 && row.position.z < prevZ + 1.0) {
@@ -1003,7 +979,7 @@
                     row.children.forEach(child => {
                         if (child.userData.isGate) {
                             const dist = Math.abs(player.position.x - child.userData.laneX);
-                            if (dist < closestDist && dist < 1.5) { closestDist = dist; hitFace = child.userData.faceType; }
+                            if (dist < closestDist && dist < 1.6) { closestDist = dist; hitFace = child.userData.faceType; }
                         }
                     });
 
@@ -1025,7 +1001,6 @@
 
             memoryBoards.forEach(b => { if(player.position.z < b.position.z) b.position.y += 0.5 * f; });
 
-            // Arkada kalanları temizle
             for (let i = gates.length - 1; i >= 0; i--) {
                 if (gates[i].position.z > player.position.z + 30) { scene.remove(gates[i]); gates.splice(i, 1); }
             }
@@ -1040,7 +1015,6 @@
             }
         }
 
-        // Rakip
         if (isMultiplayer && opponent) {
             opponent.position.x += (oppTargetX - opponent.position.x) * 0.3;
             if (oppState === 'PLAYING') {
@@ -1054,7 +1028,6 @@
             }
         }
 
-        // Partiküller
         for(let i=particles.length-1; i>=0; i--){
             let p = particles[i];
             p.position.x += p.userData.vx; p.position.y += p.userData.vy; p.position.z += p.userData.vz;
@@ -1063,7 +1036,6 @@
             if(p.userData.life <= 0) { scene.remove(p); particles.splice(i, 1); }
         }
 
-        // Kamera Takibi
         camera.position.z += ((player.position.z + 10) - camera.position.z) * 0.15;
         camera.position.x += ((player.position.x * 0.3) - camera.position.x) * 0.15;
         camera.lookAt(player.position.x * 0.2, 2, player.position.z - 10);
@@ -1073,15 +1045,3 @@
 </script>
 </body>
 </html>
-```
-
-Yapılan Temel Değişiklikler:
-
-1. Zemin ve Sonsuz Akış (Lag Sorunu Çözümü): Zemin artık hareket etmiyor; bunun yerine trackTexture.offset.y kullanılarak zemin dokusu sonsuz bir şekilde kaydırılıyor. Bu sayede "sanki kasıyor" dediğiniz 3D koordinat sorunu tamamen ortadan kalktı. Sadece engeller ve oyuncu hareket ediyor (Floating Origin).
-2. Görsellik (Renkler ve Işıklandırma): Arka plan gökyüzü rengi koyu mor/siberpunk yapıldı. Zemin mor dama tahtası oldu. Geçitler pembe, mavi ve yeşil olarak renklendirildi ve üzerlerine parlaklık (emissive) verildi.
-3. Hız ve Ritim: Hız speed = 0.8 ile başlayıp her bölümde +0.08 artacak şekilde ayarlandı. Bölüm uzunlukları kısaltıldı (LOOP_LEN = 350). Böylece ne çok yavaş ne de insan üstü bir hız olacak.
-4. Puan ve Skin Sistemi: Ana menüye "Puan" eklendi. 5 farklı renk skini var. Skor yaptıkça (geçit geçtikçe) puan kazanıyorsunuz. Öldüğünüzde kazandığınız puanlar toplam puanınıza ekleniyor.
-5. Reklam Sistemi: Skins menüsüne "Reklam İzle +100" butonu eklendi. Tıkladığınızda 3 saniyelik bir simülasyon çalışıyor ve sonunda puan veriyor.
-6. Günlük Ödül: Her gün ilk girdiğinizde menüdeki "Günlük Ödül" butonundan 150 puan alabilirsiniz.
-7. Emoji ve Dil: İskelet (💀) emojisi kaldırıldı, yerine düz "X" ve metinler kondu. Arayüzdeki klavye/emojiler temizlendi. Sağ üst köşeye TR/EN dil değiştirme butonu eklendi, tüm metinler buna göre değişiyor.
-8. Çıkış Butonu: Menüden tamamen kaldırıldı.
