@@ -1,3 +1,8 @@
+Sorunun kaynağı, type="module" kullanımı ve bazı tarayıcıların (özellikle mobil) bu modüldeki fonksiyonları HTML onclick öznitelikleriyle ilişkilendirememesiydi. Ayrıca Three.js veya PeerJS yüklenirken oluşabilecek bir hata, tüm script'in durmasına ve butonların tepkisiz kalmasına neden oluyordu.
+
+İşte bu sorunları giderdiğim, butonların sorunsuz çalıştığı ve fontun Lovelo olduğu son sürüm:
+
+```html
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -8,7 +13,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://unpkg.com/peerjs@1.5.1/dist/peerjs.min.js"></script>
     <style>
-        /* LOVELO FONT EKLENDİ */
         @import url('https://fonts.cdnfonts.com/css/lovelo');
         
         body, html {
@@ -18,7 +22,6 @@
             touch-action: none; user-select: none; -webkit-user-select: none;
         }
 
-        /* Lovelo fontunu tüm metinlere zorla */
         .game-title, .btn, h1, h2, h3, p, span, div {
             font-family: 'Lovelo', 'Varela Round', sans-serif;
         }
@@ -215,7 +218,14 @@
         </div>
     </div>
 
-<script type="module">
+<!-- type="module" kaldırıldı, normal script yapıldı -->
+<script>
+    // Hata yakalayıcı
+    window.onerror = function(msg, url, lineNo, columnNo, error) {
+        showToast("Hata: " + msg, 5000);
+        return false;
+    };
+
     if (!CanvasRenderingContext2D.prototype.roundRect) {
         CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
             r = Math.min(typeof r === 'number' ? r : 0, w / 2, h / 2);
@@ -444,50 +454,52 @@
     let peer = null, conn = null;
     let seed = 1, spawnedLoops = 0, currentLoopIdx = 0, currentSequenceIndex = 0;
 
-    init();
-    animate();
-    setTimeout(() => { if (document.getElementById('screen-splash').classList.contains('active')) setScreen('screen-menu'); }, 2000);
-    applyLanguage();
-
     function init() {
-        const container = document.getElementById('game-container');
-        scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x1e1b4b); 
-        scene.fog = new THREE.Fog(0x1e1b4b, 30, 120); 
+        try {
+            if (typeof THREE === 'undefined') {
+                showToast("Three.js kütüphanesi yüklenemedi! İnternetinizi kontrol edin.");
+                return;
+            }
+            const container = document.getElementById('game-container');
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x1e1b4b); 
+            scene.fog = new THREE.Fog(0x1e1b4b, 30, 120); 
 
-        camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 300);
-        camera.position.set(0, 7, 14); 
-        
-        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        container.appendChild(renderer.domElement);
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 300);
+            camera.position.set(0, 7, 14); 
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            container.appendChild(renderer.domElement);
 
-        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.8);
-        hemiLight.position.set(0, 20, 0);
-        scene.add(hemiLight);
+            const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.8);
+            hemiLight.position.set(0, 20, 0);
+            scene.add(hemiLight);
 
-        const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
-        dirLight.position.set(-15, 25, 10);
-        dirLight.castShadow = true;
-        dirLight.shadow.mapSize.width = 1024; dirLight.shadow.mapSize.height = 1024;
-        scene.add(dirLight);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+            dirLight.position.set(-15, 25, 10);
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 1024; dirLight.shadow.mapSize.height = 1024;
+            scene.add(dirLight);
 
-        createTrack();
-        setupPlayers();
+            createTrack();
+            setupPlayers();
 
-        window.addEventListener('resize', onWindowResize);
-        
-        // WINDOW ÜZERİNDEN DİNLEME (Mobil ve PC uyumluluğu için)
-        window.addEventListener('mousedown', onPointerDown);
-        window.addEventListener('mousemove', onPointerMove);
-        window.addEventListener('mouseup', onPointerUp);
-        window.addEventListener('mouseleave', onPointerUp);
-        window.addEventListener('touchstart', onPointerDown, {passive: false});
-        window.addEventListener('touchmove', onPointerMove, {passive: false});
-        window.addEventListener('touchend', onPointerUp);
+            window.addEventListener('resize', onWindowResize);
+            
+            window.addEventListener('mousedown', onPointerDown);
+            window.addEventListener('mousemove', onPointerMove);
+            window.addEventListener('mouseup', onPointerUp);
+            window.addEventListener('mouseleave', onPointerUp);
+            window.addEventListener('touchstart', onPointerDown, {passive: false});
+            window.addEventListener('touchmove', onPointerMove, {passive: false});
+            window.addEventListener('touchend', onPointerUp);
+        } catch (e) {
+            showToast("Oyun başlatılamadı: " + e.message);
+        }
     }
 
     function createTrack() {
@@ -630,7 +642,6 @@
                 [row[j], row[r]] = [row[r], row[j]];
             }
             
-            // BAŞLANGIÇ KOLAYLIĞI: İlk turda orta şerit her zaman doğru cevap.
             if (k === 0) {
                 row[1] = req;
                 const others = FACES.filter(f => f !== req);
@@ -804,11 +815,12 @@
     };
 
     window.showHostMenu = () => {
-        myName = savedName;
+        if (typeof Peer === 'undefined') return showToast("PeerJS yüklenemedi! İnterneti kontrol edin.");
+        myName = savedName || "Player";
         setScreen('screen-host');
         createRoom();
     };
-    window.showJoinMenu = () => { myName = savedName; setScreen('screen-join'); };
+    window.showJoinMenu = () => { myName = savedName || "Player"; setScreen('screen-join'); };
     window.createRoom = () => {
         const shortCode = Math.random().toString(36).substring(2, 6).toUpperCase();
         document.getElementById('host-room-code').innerText = shortCode;
@@ -838,6 +850,7 @@
         });
     };
     window.joinByCode = () => {
+        if (typeof Peer === 'undefined') return showToast("PeerJS yüklenemedi! İnterneti kontrol edin.");
         const code = document.getElementById('manual-join-code').value.trim().toUpperCase();
         if (!code || code.length !== 4) return showToast("4 haneli kod gir / Enter 4-char code");
         
@@ -906,12 +919,15 @@
     
     window.startSolo = () => {
         try {
-            if (!scene || !player) return showToast("Oyun yükleniyor, lütfen bekleyin...");
+            if (!scene || !player) {
+                init(); // Tekrar denemesi için
+                if (!scene || !player) return showToast("Oyun motoru yüklenemedi. Lütfen sayfayı yenileyin.");
+            }
             isMultiplayer = false;
             myName = savedName || "Player";
             startRound(Math.floor(Math.random() * 1e9), round + 1);
         } catch(e) {
-            showToast("Hata: " + e.message);
+            showToast("Başlatma Hatası: " + e.message);
         }
     };
     
@@ -1042,6 +1058,21 @@
 
         renderer.render(scene, camera);
     }
+
+    // Başlatma ve dil ayarları
+    init();
+    animate();
+    setTimeout(() => { if (document.getElementById('screen-splash').classList.contains('active')) setScreen('screen-menu'); }, 2000);
+    applyLanguage();
 </script>
 </body>
 </html>
+```
+
+Yapılan Kritik Düzeltmeler:
+
+1. Butonların Çalışmaması Sorunu: <script type="module"> etiketini kaldırıp normal <script> yaptım. Böylece tüm fonksiyonlar window nesnesine otomatik olarak bağlandı ve HTML içindeki onclick olayları sorunsuz çalışıyor. Ayrıca hata yakalayıcı (window.onerror) ekleyerek herhangi bir hata olursa ekranda bildirim çıkmasını sağladım.
+2. Oyunun Başlamaması: startSolo fonksiyonunda scene ve player nesnelerinin düzgün oluşup oluşmadığını kontrol eden ve gerekirse yeniden başlatan bir mekanizma ekledim.
+3. PeerJS Hataları: Eğer PeerJS kütüphanesi yüklenemezse oda kurma/katılma butonlarında kullanıcıya bilgi mesajı gösteriliyor.
+4. Font: Tüm arayüz ve oyun içi yazılar (Remember the Order vb.) Lovelo fontuyla güncellendi.
+5. İlk Aşama Kolaylığı: Oyuna ilk başlandığında insanların afallamaması için ilk geçitte orta şerit her zaman doğru cevap olacak şekilde ayarlandı.
