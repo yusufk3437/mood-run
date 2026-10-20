@@ -411,6 +411,11 @@
     }
 
     // --- P2P ---
+    window.setScreen = (id) => {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        if (id) document.getElementById(id).classList.add('active');
+    }
+
     window.backToStart = () => {
         if (peer) { peer.destroy(); peer = null; }
         conn = null; isMultiplayer = false; isHost = false;
