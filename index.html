@@ -64,6 +64,7 @@
 <body>
 
     <div id="game-container"></div>
+    <div id="toast" style="position:absolute;top:70px;left:50%;transform:translateX(-50%);z-index:30;background:rgba(0,0,0,.75);color:#fff;padding:8px 16px;border-radius:16px;font-weight:bold;display:none;max-width:90%;text-align:center;pointer-events:none"></div>
     
     <div id="ui-layer">
         <div class="progress-bar-container" id="progress-container">
@@ -121,7 +122,9 @@
                 <p id="fail-blame" class="text-red-600 font-black text-xl uppercase tracking-wider">Wrong Gate</p>
             </div>
             <div class="flex flex-col gap-4 w-72">
-                <button class="btn bg-blue-500 shadow-[0_6px_0_#1e3a8a]" onclick="resetGame()">Play Again</button>
+                <button class="btn bg-blue-500 shadow-[0_6px_0_#1e3a8a]" id="btn-again" onclick="playAgain()">Play Again</button>
+                <p id="again-wait" class="text-white font-bold text-center" style="display:none">Waiting for the host to restart...</p>
+                <button class="text-white/60 underline font-bold text-sm text-center" onclick="resetGame()">Leave Room</button>
             </div>
         </div>
     </div>
@@ -153,7 +156,7 @@
     let isMultiplayer = false, isHost = false;
     let oppTargetX = 0, oppTargetZ = 500, oppState = 'START';
     let myName = "Player 1", oppName = "Player 2";
-    let lastSync = 0;
+    let lastSync = 0, round = 0, lastFrame = 0;
 
     // --- UI ---
     window.setScreen = (id) => {
@@ -242,43 +245,54 @@
                 oppName = data.name;
                 updateNameLabel(oppLabel, oppName);
             } else if (data.type === 'start') {
-                seed = data.seed;
-                beginRace();
+                startRound(data.seed, data.round);
             } else if (data.type === 'sync') {
-                oppTargetX = data.x;
-                oppTargetZ = data.z;
-                oppState = data.st;
+                // Guest auto-joins a round the host already started (in case the 'start' message was missed)
+                if (!isHost && data.st === 'PLAYING' && data.rd > round) startRound(data.sd, data.rd);
+                if (data.rd !== round) return; // ignore stale data from a previous round
+                oppTargetX = data.x; oppTargetZ = data.z; oppState = data.st;
             } else if (data.type === 'gameover') {
-                handleGameOver(data.blame);
+                if (data.rd === round) handleGameOver(data.blame);
             }
         });
+        c.on('close', () => showToast('Opponent left the room', 5000));
     }
 
-    function beginRace() {
+    function showToast(msg, ms = 3000) {
+        const t = document.getElementById('toast');
+        t.innerText = msg; t.style.display = 'block';
+        clearTimeout(showToast.h);
+        showToast.h = setTimeout(() => { t.style.display = 'none'; }, ms);
+    }
+    window.addEventListener('error', (e) => showToast('Error: ' + e.message, 10000));
+
+    function startRound(newSeed, newRound) {
+        if (newRound <= round) return;
+        round = newRound; seed = newSeed;
         resetPlayerAndWorld();
         setScreen(null);
         state = 'PLAYING';
-        opponent.position.set(0, 0, 0);
-        oppTargetX = 0; oppTargetZ = 0;
-        oppState = 'PLAYING';
+        if (isMultiplayer) { opponent.position.set(0, 0, 0); oppTargetX = 0; oppTargetZ = 0; oppState = 'PLAYING'; }
+        else opponent.position.set(0, -100, 500);
     }
 
     window.startMultiplayer = () => {
         if (!isHost || !conn || !conn.open) return;
-        seed = Math.floor(Math.random() * 1e9);
-        conn.send({ type: 'start', seed: seed });
-        beginRace();
+        const s = Math.floor(Math.random() * 1e9);
+        startRound(s, round + 1);
+        conn.send({ type: 'start', seed: s, round: round });
     }
 
     window.startSolo = () => {
         isMultiplayer = false;
         myName = document.getElementById('player-name').value.trim() || "You";
         updateNameLabel(playerLabel, myName);
-        seed = Math.floor(Math.random() * 1e9);
-        resetPlayerAndWorld();
-        setScreen(null);
-        state = 'PLAYING';
-        opponent.position.set(0, -100, 500); 
+        startRound(Math.floor(Math.random() * 1e9), round + 1);
+    }
+
+    window.playAgain = () => {
+        if (!isMultiplayer) window.startSolo();
+        else if (isHost) window.startMultiplayer();
     }
 
     // --- 3D ENGINE ---
@@ -599,8 +613,12 @@
     }
 
     function handleGameOver(blameName) {
-        state = 'GAMEOVER';
+        if (state === 'GAMEOVER') return;
+        state = 'GAMEOVER'; isDragging = false;
         document.getElementById('fail-blame').innerText = `${blameName} MADE A MISTAKE!`;
+        const guest = isMultiplayer && !isHost;
+        document.getElementById('btn-again').style.display = guest ? 'none' : 'block';
+        document.getElementById('again-wait').style.display = guest ? 'block' : 'none';
         setScreen('screen-gameover');
     }
 
@@ -608,6 +626,9 @@
 
     function animate() {
         requestAnimationFrame(animate);
+        const nowT = performance.now();
+        const f = Math.min((nowT - (lastFrame || nowT)) / 16.667, 3); // same speed on every device/refresh rate
+        lastFrame = nowT;
 
         // Endless track follows the player
         if(track && trackLines) {
@@ -619,13 +640,14 @@
         const now = performance.now();
         if (isMultiplayer && conn && conn.open && now - lastSync > 33) {
             lastSync = now;
-            conn.send({ type: 'sync', x: player.position.x, z: player.position.z, st: state });
+            conn.send({ type: 'sync', x: player.position.x, z: player.position.z, st: state, rd: round, sd: seed });
         }
 
         if (state === 'PLAYING') {
-            runTime += 0.15;
-            player.position.z -= speed;
-            player.position.x += (targetX - player.position.x) * 0.2; 
+            runTime += 0.15 * f;
+            const prevZ = player.position.z;
+            player.position.z -= speed * f;
+            player.position.x += (targetX - player.position.x) * (1 - Math.pow(0.8, f)); 
 
             playerBody.position.y = Math.abs(Math.sin(runTime)) * 0.2;
             playerBody.rotation.z = (targetX - player.position.x) * -0.05; 
@@ -648,7 +670,7 @@
             // Collision test (each player tracks their own gates)
             for (let i = 0; i < gates.length; i++) {
                 const row = gates[i];
-                if (row.position.z > player.position.z - 1.0 && row.position.z < player.position.z + 1.0) {
+                if (row.position.z > player.position.z - 1.0 && row.position.z < prevZ + 1.0) {
                     if (row.userData.passed) continue; 
                     let hitFace = null, closestDist = Infinity;
                     
@@ -667,14 +689,14 @@
                             updateProgressBar();
                         } else {
                             handleGameOver(myName);
-                            if(isMultiplayer && conn) conn.send({ type: 'gameover', blame: myName });
+                            if(isMultiplayer && conn) conn.send({ type: 'gameover', blame: myName, rd: round });
                             break;
                         }
                     }
                 }
             }
 
-            memoryBoards.forEach(b => { if(player.position.z < b.position.z) b.position.y += 0.5; });
+            memoryBoards.forEach(b => { if(player.position.z < b.position.z) b.position.y += 0.5 * f; });
 
             // Remove objects left behind
             for (let i = gates.length - 1; i >= 0; i--) {
