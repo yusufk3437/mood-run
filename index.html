@@ -1,8 +1,3 @@
-Sorunun kaynağı, type="module" kullanımı ve bazı tarayıcıların (özellikle mobil) bu modüldeki fonksiyonları HTML onclick öznitelikleriyle ilişkilendirememesiydi. Ayrıca Three.js veya PeerJS yüklenirken oluşabilecek bir hata, tüm script'in durmasına ve butonların tepkisiz kalmasına neden oluyordu.
-
-İşte bu sorunları giderdiğim, butonların sorunsuz çalıştığı ve fontun Lovelo olduğu son sürüm:
-
-```html
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -13,17 +8,20 @@ Sorunun kaynağı, type="module" kullanımı ve bazı tarayıcıların (özellik
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://unpkg.com/peerjs@1.5.1/dist/peerjs.min.js"></script>
     <style>
+        /* LOVELO FONTUNUN İÇİ DOLU OLANI İÇİN */
         @import url('https://fonts.cdnfonts.com/css/lovelo');
         
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
             background-color: #4f46e5; 
-            font-family: 'Lovelo', 'Varela Round', sans-serif !important;
+            font-family: 'Lovelo', 'Fredoka One', 'Varela Round', sans-serif !important;
+            font-weight: 900;
             touch-action: none; user-select: none; -webkit-user-select: none;
         }
 
         .game-title, .btn, h1, h2, h3, p, span, div {
-            font-family: 'Lovelo', 'Varela Round', sans-serif;
+            font-family: 'Lovelo', 'Fredoka One', sans-serif;
+            font-weight: 900;
         }
 
         #game-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
@@ -218,9 +216,7 @@ Sorunun kaynağı, type="module" kullanımı ve bazı tarayıcıların (özellik
         </div>
     </div>
 
-<!-- type="module" kaldırıldı, normal script yapıldı -->
 <script>
-    // Hata yakalayıcı
     window.onerror = function(msg, url, lineNo, columnNo, error) {
         showToast("Hata: " + msg, 5000);
         return false;
@@ -435,13 +431,13 @@ Sorunun kaynağı, type="module" kullanımı ve bazı tarayıcıların (özellik
     const LOOP_LEN = 350; 
     
     let scene, camera, renderer, trackMesh, trackTexture;
-    let player, playerBody, leftLeg, rightLeg;
-    let opponent, oppBody, oppLeftLeg, oppRightLeg;
+    let player, playerBody, leftArm, rightArm, leftLeg, rightLeg;
+    let opponent, oppBody, oppLeftArm, oppRightArm, oppLeftLeg, oppRightLeg;
     let playerLabel, oppLabel;
     
     let gates = [], memoryBoards = [], particles = [];
     let state = 'START'; 
-    let speed = 0.8; 
+    let speed = 0.55; // HIZ YAVAŞLATILDI (0.8'den 0.55'e)
     let loopCount = 1;
     let runTime = 0, oppRunTime = 0;
     let targetX = 0, isDragging = false, previousPointerX = 0;
@@ -457,7 +453,7 @@ Sorunun kaynağı, type="module" kullanımı ve bazı tarayıcıların (özellik
     function init() {
         try {
             if (typeof THREE === 'undefined') {
-                showToast("Three.js kütüphanesi yüklenemedi! İnternetinizi kontrol edin.");
+                showToast("Three.js kütüphanesi yüklenemedi!");
                 return;
             }
             const container = document.getElementById('game-container');
@@ -465,8 +461,9 @@ Sorunun kaynağı, type="module" kullanımı ve bazı tarayıcıların (özellik
             scene.background = new THREE.Color(0x1e1b4b); 
             scene.fog = new THREE.Fog(0x1e1b4b, 30, 120); 
 
+            // Kamera açısı karakterin yürüdüğünü daha iyi görmek için hafifçe ayarlandı
             camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 300);
-            camera.position.set(0, 7, 14); 
+            camera.position.set(0, 6, 12); 
             
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
             renderer.setSize(window.innerWidth, window.innerHeight);
@@ -528,39 +525,73 @@ Sorunun kaynağı, type="module" kullanımı ve bazı tarayıcıların (özellik
         scene.add(trackMesh);
     }
 
+    // GERÇEKÇİ VE SEVİMLİ İNSAN FİGÜRÜ (Kollar ve Bacaklar ayrı hareket eder)
     function createCharacterConfig(colorHex) {
         const charGroup = new THREE.Group();
         const charBody = new THREE.Group();
-        const mat = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.2, metalness: 0.1, emissive: colorHex, emissiveIntensity: 0.1 }); 
+        const mat = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.4 });
 
-        const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.45, 1.0, 16), mat);
-        torso.position.y = 1.4; torso.castShadow = true; charBody.add(torso);
+        // Kafa
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.35, 16, 16), mat);
+        head.position.y = 1.8; head.castShadow = true; charBody.add(head);
 
-        const head = new THREE.Mesh(new THREE.SphereGeometry(0.4, 32, 32), mat);
-        head.position.y = 2.2; head.castShadow = true; charBody.add(head);
+        // Gözler
+        const eyeMat = new THREE.MeshBasicMaterial({color: 0x000000});
+        const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), eyeMat);
+        eyeL.position.set(-0.12, 1.85, 0.3); charBody.add(eyeL);
+        const eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), eyeMat);
+        eyeR.position.set(0.12, 1.85, 0.3); charBody.add(eyeR);
 
-        const legGeo = new THREE.BoxGeometry(0.25, 0.9, 0.25);
-        const lLeg = new THREE.Mesh(legGeo, mat);
-        lLeg.position.set(-0.18, 0.45, 0); lLeg.castShadow = true; charBody.add(lLeg);
-        const rLeg = new THREE.Mesh(legGeo, mat);
-        rLeg.position.set(0.18, 0.45, 0); rLeg.castShadow = true; charBody.add(rLeg);
+        // Gövde
+        const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.3, 0.7, 16), mat);
+        torso.position.y = 1.1; torso.castShadow = true; charBody.add(torso);
+
+        // Kollar (Dönebilmesi için gruplara ayırdık)
+        const armGroupL = new THREE.Group(); armGroupL.position.set(-0.3, 1.3, 0);
+        const lArm = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.6, 8), mat);
+        lArm.position.y = -0.3; lArm.castShadow = true; armGroupL.add(lArm); charBody.add(armGroupL);
+
+        const armGroupR = new THREE.Group(); armGroupR.position.set(0.3, 1.3, 0);
+        const rArm = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.6, 8), mat);
+        rArm.position.y = -0.3; rArm.castShadow = true; armGroupR.add(rArm); charBody.add(armGroupR);
+
+        // Bacaklar (Dönebilmesi için gruplara ayırdık)
+        const legGroupL = new THREE.Group(); legGroupL.position.set(-0.12, 0.7, 0);
+        const lLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.7, 8), mat);
+        lLeg.position.y = -0.35; lLeg.castShadow = true; legGroupL.add(lLeg); charBody.add(legGroupL);
+
+        const legGroupR = new THREE.Group(); legGroupR.position.set(0.12, 0.7, 0);
+        const rLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.7, 8), mat);
+        rLeg.position.y = -0.35; rLeg.castShadow = true; legGroupR.add(rLeg); charBody.add(legGroupR);
 
         charGroup.add(charBody);
-        return { root: charGroup, body: charBody, leftLeg: lLeg, rightLeg: rLeg, mat: mat };
+        
+        return { 
+            root: charGroup, body: charBody, 
+            leftArm: armGroupL, rightArm: armGroupR, 
+            leftLeg: legGroupL, rightLeg: legGroupR, 
+            mat: mat 
+        };
     }
 
     let playerMat;
     function setupPlayers() {
         const skinData = SKINS.find(s => s.id === selectedSkin) || SKINS[0];
         const myChar = createCharacterConfig(skinData.color); 
-        player = myChar.root; playerBody = myChar.body; leftLeg = myChar.leftLeg; rightLeg = myChar.rightLeg;
+        player = myChar.root; playerBody = myChar.body; 
+        leftArm = myChar.leftArm; rightArm = myChar.rightArm;
+        leftLeg = myChar.leftLeg; rightLeg = myChar.rightLeg;
         playerMat = myChar.mat;
-        player.add(createTextSprite("You", "#ffffff"));
+        
+        player.add(createTextSprite("YOU", "#ffffff"));
         scene.add(player);
 
         const oppChar = createCharacterConfig(0x0ea5e9); 
-        opponent = oppChar.root; oppBody = oppChar.body; oppLeftLeg = oppChar.leftLeg; oppRightLeg = oppChar.rightLeg;
-        oppLabel = createTextSprite("Rival", "#facc15"); 
+        opponent = oppChar.root; oppBody = oppChar.body; 
+        oppLeftArm = oppChar.leftArm; oppRightArm = oppChar.rightArm;
+        oppLeftLeg = oppChar.leftLeg; oppRightLeg = oppChar.rightLeg;
+        
+        oppLabel = createTextSprite("RIVAL", "#facc15"); 
         opponent.add(oppLabel);
         opponent.position.set(0, -100, 500); 
         scene.add(opponent);
@@ -574,19 +605,30 @@ Sorunun kaynağı, type="module" kullanımı ve bazı tarayıcıların (özellik
         }
     };
 
+    // YAZI FONTUNU DOLU VE KALIN YAPMAK İÇİN GÜNCELLENDİ
     function createTextSprite(text, color) {
         const canvas = document.createElement('canvas');
         canvas.width = 256; canvas.height = 64;
         const context = canvas.getContext('2d');
-        context.font = "Bold 40px 'Lovelo', sans-serif";
-        context.fillStyle = color;
+        
+        context.font = "900 40px 'Lovelo', 'Fredoka One', sans-serif";
         context.textAlign = "center";
-        context.fillText(text, 128, 48);
+        context.textBaseline = "middle";
+        
+        // Yazının etrafına siyah kontur (dış hat) ekleyerek içinin dolu görünmesini sağlıyoruz
+        context.strokeStyle = 'rgba(0,0,0,0.8)';
+        context.lineWidth = 6;
+        context.strokeText(text, 128, 32);
+        
+        // İçini dolduruyoruz
+        context.fillStyle = color;
+        context.fillText(text, 128, 32);
+
         const texture = new THREE.CanvasTexture(canvas);
         const spriteMaterial = new THREE.SpriteMaterial({ map: texture, depthTest: false });
         const sprite = new THREE.Sprite(spriteMaterial);
         sprite.scale.set(4, 1, 1);
-        sprite.position.y = 3.5;
+        sprite.position.y = 3.2;
         return sprite;
     }
 
@@ -673,7 +715,7 @@ Sorunun kaynağı, type="module" kullanımı ve bazı tarayıcıların (özellik
         ctx.lineWidth = 15; ctx.strokeStyle = '#60a5fa'; ctx.stroke();
 
         ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 70px "Lovelo", sans-serif';
+        ctx.font = '900 70px "Lovelo", "Fredoka One", sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText(`REMEMBER THE ORDER!`, 512, 120);
 
@@ -753,7 +795,7 @@ Sorunun kaynağı, type="module" kullanımı ve bazı tarayıcıların (özellik
 
     function resetPlayerAndWorld() {
         player.position.set(0, 0, 0); playerBody.rotation.set(0,0,0);
-        targetX = 0; loopCount = 1; speed = 0.8; 
+        targetX = 0; loopCount = 1; speed = 0.55; // Yavaşlatıldı
         currentSequenceIndex = 0; currentLoopIdx = 0;
         
         gates.forEach(g => scene.remove(g)); gates = [];
@@ -815,7 +857,7 @@ Sorunun kaynağı, type="module" kullanımı ve bazı tarayıcıların (özellik
     };
 
     window.showHostMenu = () => {
-        if (typeof Peer === 'undefined') return showToast("PeerJS yüklenemedi! İnterneti kontrol edin.");
+        if (typeof Peer === 'undefined') return showToast("PeerJS yüklenemedi!");
         myName = savedName || "Player";
         setScreen('screen-host');
         createRoom();
@@ -850,7 +892,7 @@ Sorunun kaynağı, type="module" kullanımı ve bazı tarayıcıların (özellik
         });
     };
     window.joinByCode = () => {
-        if (typeof Peer === 'undefined') return showToast("PeerJS yüklenemedi! İnterneti kontrol edin.");
+        if (typeof Peer === 'undefined') return showToast("PeerJS yüklenemedi!");
         const code = document.getElementById('manual-join-code').value.trim().toUpperCase();
         if (!code || code.length !== 4) return showToast("4 haneli kod gir / Enter 4-char code");
         
@@ -920,8 +962,8 @@ Sorunun kaynağı, type="module" kullanımı ve bazı tarayıcıların (özellik
     window.startSolo = () => {
         try {
             if (!scene || !player) {
-                init(); // Tekrar denemesi için
-                if (!scene || !player) return showToast("Oyun motoru yüklenemedi. Lütfen sayfayı yenileyin.");
+                init(); 
+                if (!scene || !player) return showToast("Oyun motoru yüklenemedi. Sayfayı yenileyin.");
             }
             isMultiplayer = false;
             myName = savedName || "Player";
@@ -967,13 +1009,20 @@ Sorunun kaynağı, type="module" kullanımı ve bazı tarayıcıların (özellik
             }
 
             const prevZ = player.position.z;
-            player.position.z -= speed * f * 1.5; 
+            // HIZ YAVAŞLATILDI (Çarpan 1.5'ten 1.1'e düşürüldü)
+            player.position.z -= speed * f * 1.1; 
             player.position.x += (targetX - player.position.x) * (1 - Math.pow(0.8, f)); 
 
-            playerBody.position.y = Math.abs(Math.sin(runTime)) * 0.2;
-            playerBody.rotation.z = (targetX - player.position.x) * -0.05; 
-            leftLeg.rotation.x = Math.sin(runTime) * 0.8; rightLeg.rotation.x = -Math.sin(runTime) * 0.8;
-            leftLeg.position.y = 0.45 + Math.abs(Math.sin(runTime)) * 0.3; rightLeg.position.y = 0.45 + Math.abs(Math.cos(runTime)) * 0.3;
+            // YÜRÜME / KOŞMA ANİMASYONU (Kollar ve Bacaklar ters yönde sallanır)
+            playerBody.position.y = Math.abs(Math.sin(runTime)) * 0.25; // Zıplama efekti
+            playerBody.rotation.z = (targetX - player.position.x) * -0.05; // Sağa sola yatma
+            playerBody.rotation.x = 0.1; // Hafif öne eğilme
+            
+            leftLeg.rotation.x = Math.sin(runTime) * 0.8;
+            rightLeg.rotation.x = -Math.sin(runTime) * 0.8;
+            
+            leftArm.rotation.x = -Math.sin(runTime) * 0.8;
+            rightArm.rotation.x = Math.sin(runTime) * 0.8;
 
             while (player.position.z < -(spawnedLoops - 1) * LOOP_LEN - 200) {
                 spawnLoop(spawnedLoops); spawnedLoops++;
@@ -982,7 +1031,8 @@ Sorunun kaynağı, type="module" kullanımı ve bazı tarayıcıların (özellik
             const idx = Math.max(0, Math.floor(-player.position.z / LOOP_LEN));
             if (idx !== currentLoopIdx) {
                 currentLoopIdx = idx; loopCount = idx + 1;
-                speed = Math.min(2.2, 0.8 + 0.08 * idx); 
+                // Hızlanma eğrisi yumuşatıldı (Maksimum hız 1.8)
+                speed = Math.min(1.8, 0.55 + 0.05 * idx); 
                 currentSequenceIndex = 0; updateProgressBar();
             }
 
@@ -1035,9 +1085,14 @@ Sorunun kaynağı, type="module" kullanımı ve bazı tarayıcıların (özellik
             opponent.position.x += (oppTargetX - opponent.position.x) * 0.3;
             if (oppState === 'PLAYING') {
                 opponent.position.z = player.position.z + (isHost ? 0.05 : -0.05);
-                oppRunTime += 0.15; oppBody.rotation.x = 0;
-                oppBody.position.y = Math.abs(Math.sin(oppRunTime)) * 0.2;
-                oppLeftLeg.rotation.x = Math.sin(oppRunTime) * 0.8; oppRightLeg.rotation.x = -Math.sin(oppRunTime) * 0.8;
+                oppRunTime += 0.15; oppBody.rotation.x = 0.1;
+                oppBody.position.y = Math.abs(Math.sin(oppRunTime)) * 0.25;
+                
+                oppLeftLeg.rotation.x = Math.sin(oppRunTime) * 0.8;
+                oppRightLeg.rotation.x = -Math.sin(oppRunTime) * 0.8;
+                oppLeftArm.rotation.x = -Math.sin(oppRunTime) * 0.8;
+                oppRightArm.rotation.x = Math.sin(oppRunTime) * 0.8;
+                
             } else if (oppState === 'GAMEOVER') {
                 opponent.position.z = oppTargetZ;
                 oppBody.rotation.x = -Math.PI / 2; oppBody.position.y = 0.2;
@@ -1054,12 +1109,11 @@ Sorunun kaynağı, type="module" kullanımı ve bazı tarayıcıların (özellik
 
         camera.position.z += ((player.position.z + 10) - camera.position.z) * 0.15;
         camera.position.x += ((player.position.x * 0.3) - camera.position.x) * 0.15;
-        camera.lookAt(player.position.x * 0.2, 2, player.position.z - 10);
+        camera.lookAt(player.position.x * 0.2, 1.5, player.position.z - 10);
 
         renderer.render(scene, camera);
     }
 
-    // Başlatma ve dil ayarları
     init();
     animate();
     setTimeout(() => { if (document.getElementById('screen-splash').classList.contains('active')) setScreen('screen-menu'); }, 2000);
@@ -1067,12 +1121,3 @@ Sorunun kaynağı, type="module" kullanımı ve bazı tarayıcıların (özellik
 </script>
 </body>
 </html>
-```
-
-Yapılan Kritik Düzeltmeler:
-
-1. Butonların Çalışmaması Sorunu: <script type="module"> etiketini kaldırıp normal <script> yaptım. Böylece tüm fonksiyonlar window nesnesine otomatik olarak bağlandı ve HTML içindeki onclick olayları sorunsuz çalışıyor. Ayrıca hata yakalayıcı (window.onerror) ekleyerek herhangi bir hata olursa ekranda bildirim çıkmasını sağladım.
-2. Oyunun Başlamaması: startSolo fonksiyonunda scene ve player nesnelerinin düzgün oluşup oluşmadığını kontrol eden ve gerekirse yeniden başlatan bir mekanizma ekledim.
-3. PeerJS Hataları: Eğer PeerJS kütüphanesi yüklenemezse oda kurma/katılma butonlarında kullanıcıya bilgi mesajı gösteriliyor.
-4. Font: Tüm arayüz ve oyun içi yazılar (Remember the Order vb.) Lovelo fontuyla güncellendi.
-5. İlk Aşama Kolaylığı: Oyuna ilk başlandığında insanların afallamaması için ilk geçitte orta şerit her zaman doğru cevap olacak şekilde ayarlandı.
