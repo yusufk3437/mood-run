@@ -19,7 +19,18 @@ html,body{margin:0;height:100%;overflow:hidden;background:#6d5dfc;font-family:'V
 .btn:active{transform:translateY(4px);box-shadow:0 2px 0 var(--d,#1e3a8a)}
 .btn[disabled]{opacity:.55;filter:grayscale(.7)}
 .g{--c:#22c55e;--d:#14532d}.b{--c:#3b82f6;--d:#1e3a8a}.y{--c:#f59e0b;--d:#92400e}.p{--c:#a855f7;--d:#581c87}.k{--c:#6b7280;--d:#374151}
-.btn svg,.pill svg{width:22px;height:22px;flex:none}
+.btn svg,.pill svg,.btn img,.pill img{width:22px;height:22px;flex:none}
+[data-ic]{display:inline-flex;align-items:center;flex:none}
+.wallet{position:absolute;top:calc(env(safe-area-inset-top,0px) + 16px);left:16px;right:16px;display:flex;justify-content:center;gap:14px}
+.wallet-item{display:flex;align-items:center;gap:8px;min-width:0;flex:1;max-width:180px;padding:8px 12px 8px 6px;border-radius:22px;background:linear-gradient(150deg,#473571,#261b48);border:1px solid #a18cbe;box-shadow:0 5px 0 #201535,0 8px 20px #160d3033}
+.wallet-item img{width:56px;height:56px;filter:drop-shadow(0 3px 3px #140b3655)}
+.wallet-item small{display:block;font-size:10px;font-weight:700;letter-spacing:.12em;margin-bottom:4px}
+.wallet-item b{display:block;font-family:'Fredoka',sans-serif;font-size:23px;line-height:1;overflow-wrap:anywhere}
+.wallet-gold{border-color:#cfad5e;color:#fff0b4}.wallet-gem{border-color:#64badc;color:#c3f3ff}
+#s-menu{padding-top:110px}
+@keyframes coin-pop{50%{transform:scale(1.22);color:#ffe06d}}
+.coin-pop{animation:coin-pop .25s ease-out}
+@media(max-width:350px){.wallet{gap:8px;left:10px;right:10px}.wallet-item{padding-right:7px;gap:5px}.wallet-item img{width:46px;height:46px}.wallet-item b{font-size:21px}}
 .pill{display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.35);border:2px solid #fff;border-radius:20px;padding:4px 12px;font-size:18px}
 .note{opacity:.85;text-align:center;font-size:14px;max-width:290px;margin:0}
 .err{color:#fde047;min-height:20px;margin:0;font-size:14px;text-align:center}
@@ -34,7 +45,7 @@ input{width:100%;max-width:290px;padding:12px 18px;border-radius:20px;border:3px
 .sk,.gd{background:rgba(255,255,255,.14);border:3px solid transparent;border-radius:16px;padding:8px 2px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-size:12px;min-height:92px;text-align:center}
 .sel,.cur{border-color:#fde047;background:rgba(253,224,71,.22)}
 .sk i{width:42px;height:42px;border-radius:50%;border:3px solid #fff;display:block}
-.pr{display:flex;align-items:center;gap:3px}.pr svg{width:14px;height:14px}
+.pr{display:flex;align-items:center;gap:3px}.pr svg,.pr img{width:18px;height:18px}
 #gift-dot{position:absolute;top:6px;right:16px;width:14px;height:14px;border-radius:50%;background:#ef4444;border:2px solid #fff;display:none}
 #wheel{position:relative;display:flex;width:290px;height:36px;border-radius:18px;overflow:hidden;border:3px solid #fff}
 #wheel b{flex:1;text-align:center;line-height:30px;font-family:'Fredoka',cursive}
@@ -53,7 +64,10 @@ input{width:100%;max-width:290px;padding:12px 18px;border-radius:20px;border:3px
  </div>
 
  <div class="scr" id="s-menu">
-  <div class="pill" style="position:absolute;top:calc(env(safe-area-inset-top,0px) + 14px);right:14px"><span data-ic="coin"></span><b class="cn">0</b></div>
+  <div class="wallet">
+   <div class="wallet-item wallet-gold"><span data-ic="coin"></span><div><small data-currency-name="gold">GOLD</small><b class="cn">0</b></div></div>
+   <div class="wallet-item wallet-gem"><span data-ic="gem"></span><div><small data-currency-name="gems">GEMS</small><b class="gn">0</b></div></div>
+  </div>
   <div class="ttl" style="font-size:3.6rem">MOOD<br><span style="color:#fde047">RUN</span></div>
   <div style="letter-spacing:.3em;opacity:.8;margin-bottom:10px">KADO games</div>
   <button class="btn g" onclick="onPlay()"><span data-i="play"></span></button>
@@ -156,7 +170,8 @@ const store={get(k,d){try{const v=localStorage.getItem(k);return v===null?d:v}ca
 
 // ---------- ICONS (drawn, no emoji) ----------
 const IC={
-coin:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#fbbf24" stroke="#b45309" stroke-width="2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#f59e0b" stroke-width="2.5"/></svg>',
+coin:'<img src="assets/gold.svg" alt="" width="32" height="32">',
+gem:'<img src="assets/gem.svg" alt="" width="32" height="32">',
 ad:'<svg viewBox="0 0 24 24"><rect x="1.5" y="5.5" width="14" height="13" rx="3" fill="#fff"/><path d="M17 10.5l5.5-3.5v10L17 13.5z" fill="#fff"/></svg>',
 gift:'<svg viewBox="0 0 24 24"><rect x="3" y="10" width="18" height="11" rx="2" fill="#ef4444"/><rect x="2" y="6.5" width="20" height="5" rx="2" fill="#f87171"/><rect x="10.5" y="6.5" width="3" height="14.5" fill="#fde047"/><path d="M12 6.5C9 1.5 5 4.5 8.5 6.5zM12 6.5c3-5 7-2 3.5 0z" fill="#fde047"/></svg>',
 fail:'<svg viewBox="0 0 120 120" width="110" height="110"><circle cx="60" cy="60" r="54" fill="#ef4444" stroke="#991b1b" stroke-width="6"/><path d="M38 38l16 16M54 38L38 54M66 38l16 16M82 38L66 54" stroke="#fff" stroke-width="7" stroke-linecap="round"/><path d="M40 88q20-22 40 0" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round"/></svg>',
@@ -175,6 +190,7 @@ const cleanName=n=>String(n||'').replace(/[^\p{L}\p{N} _.-]/gu,'').trim().slice(
 let savedName=cleanName(store.get('kado_name',''));
 let soundOn=store.get('kado_sound','1')==='1',vibOn=store.get('kado_vib','1')==='1';
 let coins=+store.get('kado_coins','0')||0;
+const gems=Math.max(0,Math.floor(+store.get('kado_gems','0')||0));
 const SKINS=[{c:0xeaf8ff,p:0},{c:0x3b82f6,p:100},{c:0x22c55e,p:150},{c:0xa855f7,p:200},{c:0xf97316,p:300},{c:0xec4899,p:400},{c:0xfacc15,p:600},{c:-1,p:1000}]; // c:-1 = rainbow
 let owned;try{owned=JSON.parse(store.get('kado_owned','[0]'));if(!Array.isArray(owned))owned=[0]}catch(e){owned=[0]}
 let skin=+store.get('kado_skin','0')||0;if(!owned.includes(skin)||!SKINS[skin])skin=0;
@@ -188,7 +204,7 @@ function toast(msg,ms=3000){const e=$('toast');e.textContent=msg;e.style.display
 window.addEventListener('error',e=>{if(e.message&&e.message!=='Script error.')toast('Error: '+e.message,10000)});
 function setScreen(id){document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));if(id)$(id).classList.add('on');$('hud').style.display=id===null?'flex':'none';cur=id}
 function addCoins(n){coins+=n;store.set('kado_coins',String(coins));document.querySelectorAll('.cn').forEach(e=>{e.textContent=coins});updateHud()}
-function updateHud(){$('hud-lvl').textContent=t('level')+' '+loopCount;$('hud-lives').textContent='♥ '.repeat(lives)+'♡ '.repeat(MAX_LIVES-lives);$('hud-coins').textContent=coins+runCoins}
+function updateHud(){$('hud-lvl').textContent=t('level')+' '+loopCount;$('hud-lives').textContent='♥ '.repeat(lives)+'♡ '.repeat(MAX_LIVES-lives);$('hud-coins').textContent=coins+(state==='PLAYING'?runCoins:0);document.querySelectorAll('.gn').forEach(e=>{e.textContent=gems});document.querySelectorAll('[data-currency-name]').forEach(e=>{e.textContent=e.dataset.currencyName==='gold'?(lang==='tr'?'ALTIN':'GOLD'):(lang==='tr'?'ELMAS':'GEMS')})}
 function updateBar(){$('bar-fill').style.width=(seqIdx/3*100)+'%'}
 function applyLang(){document.documentElement.lang=lang;document.querySelectorAll('[data-i]').forEach(e=>{e.textContent=t(e.dataset.i)});document.querySelectorAll('[data-p]').forEach(e=>{e.placeholder=t(e.dataset.p)});refreshSettings();renderShop();refreshDaily();updateHud()}
 
@@ -280,7 +296,8 @@ function handleGameOver(name){
 const FACES=['smile','neutral','sad'],GATE_COLORS=[0xf05f7b,0x42b9e7,0xffcf45],LW=3.2,BND=LW*1.1,P=6.4,TL=512,GH=4.5,GW=LW*.95;
 const GAP0=2,GAP_STEP=.1,GAP_MIN=1.2,V0=36,V_STEP=1.2,V_MAX=50; // time between gates: 2.0s, 1.9s, 1.8s ... down to 1.2s; speed in units/second
 let scene,camera,renderer,trackTex,curbTex,trackM,curbL,curbR,ground,player,pBody,pLL,pRL,opp,oBody,oLL,oRL,playerLabel,oppLabel,pMat,oMat,faceMats={},wf={},frameMats,panelMats,pMats,gPillar,gTop,gPanel,gCard,bGeo,pGeo;
-let gates=[],boards=[],parts=[],deco=[];
+let gates=[],boards=[],parts=[],deco=[],goldPickups=[];
+let goldBodyGeo,goldFaceGeo,goldRimMat,goldFaceMat;
 const MAX_LIVES=3;
 let state='START',speed=V0/60,loopCount=1,lives=MAX_LIVES,runTime=0,oRun=0,targetX=0,dragging=false,prevPX=0,spawned=0,curLoop=0,seqIdx=0,score=0,runCoins=0,lastSync=0,lastFrame=0;
 const loops=[];
@@ -306,7 +323,35 @@ function scatter(m,z,cloud){m.position.x=(Math.random()<.5?-1:1)*((cloud?14:9)+M
 function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let x=Math.imul(a^a>>>15,1|a);x=x+Math.imul(x^x>>>7,61|x)^x;return((x^x>>>14)>>>0)/4294967296}}
 function getLoopData(k){const rng=mulberry32((seed+k*7919)>>>0),sequence=[],rows=[];for(let i=0;i<3;i++){sequence.push(FACES[Math.floor(rng()*3)]);const r=[...FACES];for(let j=2;j>0;j--){const q=Math.floor(rng()*(j+1));[r[j],r[q]]=[r[q],r[j]]}rows.push(r)}return{sequence,gates:rows}}
 function loopInfo(k){while(loops.length<=k){const i=loops.length,start=i?loops[i-1].end:0,v=Math.min(V_MAX,V0+V_STEP*i),gap=n=>Math.max(GAP_MIN,GAP0-GAP_STEP*(3*i+n))*v,board=start-(i?1.5:3)*v,g1=board-gap(0),g2=g1-gap(1),g3=g2-gap(2);loops.push({start,v,board,g:[g1,g2,g3],end:g3})}return loops[k]}
-function spawnLoop(k){const d=getLoopData(k),L=loopInfo(k);spawnBoard(L.board,d);L.g.forEach((z,j)=>spawnGateRow(z,j,d))}
+function spawnLoop(k){const d=getLoopData(k),L=loopInfo(k);spawnBoard(L.board,d);L.g.forEach((z,j)=>spawnGateRow(z,j,d));spawnGold(k)}
+function goldLayout(k){
+ // Independent random stream keeps the existing emotion sequences intact.
+ const rng=mulberry32((seed^Math.imul(k+1,2654435761))>>>0),L=loopInfo(k),bounds=[L.start,L.board,...L.g],positions=[];
+ for(let segment=0;segment<bounds.length-1;segment++){
+  if(segment>0&&rng()>.62)continue;
+  const x=(Math.floor(rng()*3)-1)*LW,count=3+Math.floor(rng()*2);
+  for(let i=0;i<count;i++)positions.push({x,z:bounds[segment]+(bounds[segment+1]-bounds[segment])*(.28+i*.13)});
+ }
+ return positions;
+}
+function spawnGold(k){
+ goldLayout(k).forEach(({x,z},i)=>{
+  const pickup=new THREE.Group();pickup.name='track-gold';pickup.position.set(x,1.25,z);pickup.userData.phase=i*.8;
+  const rim=new THREE.Mesh(goldBodyGeo,goldRimMat),front=new THREE.Mesh(goldFaceGeo,goldFaceMat),back=new THREE.Mesh(goldFaceGeo,goldFaceMat);
+  front.position.z=.09;back.position.z=-.09;back.rotation.y=Math.PI;
+  pickup.add(rim,front,back);scene.add(pickup);goldPickups.push(pickup);
+ });
+}
+function updateGold(prevZ,now){
+ for(let i=goldPickups.length-1;i>=0;i--){
+  const pickup=goldPickups[i];pickup.rotation.y=Math.sin(now*.002+pickup.userData.phase)*.65;pickup.position.y=1.25+Math.sin(now*.004+pickup.userData.phase)*.12;
+  const crossed=pickup.position.z<=prevZ+.65&&pickup.position.z>=player.position.z-.65;
+  if(crossed&&Math.abs(pickup.position.x-player.position.x)<.75){
+   scene.remove(pickup);goldPickups.splice(i,1);runCoins++;updateHud();beep(980,.045);
+   const counter=$('hud-coins');counter.classList.remove('coin-pop');void counter.offsetWidth;counter.classList.add('coin-pop');
+  }else if(pickup.position.z>player.position.z+4){scene.remove(pickup);goldPickups.splice(i,1)}
+ }
+}
 function spawnBoard(z,data){
  const tx=canvasTex(1024,512,g=>{
   const gr=g.createLinearGradient(0,0,0,512);gr.addColorStop(0,'#8b5cf6');gr.addColorStop(1,'#4c1d95');
@@ -331,7 +376,7 @@ function spawnGateRow(z,j,data){
  scene.add(row);gates.push(row);
 }
 function burst(x,z){for(let i=0;i<16;i++){const p=new THREE.Mesh(pGeo,pMats[i%5]);p.position.set(x+(Math.random()-.5)*3,2,z);p.userData={vx:(Math.random()-.5)*.4,vy:Math.random()*.4+.2,vz:(Math.random()-.5)*.4,life:1};scene.add(p);parts.push(p)}}
-function clearWorld(){gates.forEach(g=>scene.remove(g));gates=[];boards.forEach(killBoard);boards=[];parts.forEach(p=>scene.remove(p));parts=[]}
+function clearWorld(){gates.forEach(g=>scene.remove(g));gates=[];boards.forEach(killBoard);boards=[];parts.forEach(p=>scene.remove(p));parts=[];goldPickups.forEach(p=>scene.remove(p));goldPickups=[]}
 function resetWorld(){clearWorld();loops.length=0;spawned=0;curLoop=0;seqIdx=0;score=0;runCoins=0;lives=MAX_LIVES;loopCount=1;speed=V0/60;targetX=0;player.position.set(0,0,0);pBody.rotation.set(0,0,0);updateBar();updateHud()}
 
 function poseRunner(body,left,right,phase,lean=0){
@@ -414,6 +459,11 @@ function init(){
  gPillar=new THREE.CylinderGeometry(.22,.22,GH,14);gTop=new THREE.CylinderGeometry(.28,.28,GW,14);gPanel=new THREE.PlaneGeometry(GW-.4,GH-.5);gCard=new THREE.PlaneGeometry(2,2);
  bGeo=new THREE.PlaneGeometry(14,7);pGeo=new THREE.BoxGeometry(.3,.3,.3);
  pMats=[0xff5a5f,0x4dabf7,0x51cf66,0xfcc419,0xcc5de8].map(c=>new THREE.MeshBasicMaterial({color:c}));
+ // Shared geometry and texture; pickups are removed without reallocating materials.
+ goldBodyGeo=new THREE.CylinderGeometry(.48,.48,.16,24);goldBodyGeo.rotateX(Math.PI/2);
+ goldFaceGeo=new THREE.PlaneGeometry(1.12,1.12);
+ goldRimMat=new THREE.MeshStandardMaterial({color:0xe8ad10,roughness:.3,metalness:.25});
+ goldFaceMat=new THREE.MeshBasicMaterial({map:new THREE.TextureLoader().load('assets/gold.svg'),transparent:true,alphaTest:.05});
 
  addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
  const dn=e=>{if(state==='PLAYING'){dragging=true;prevPX=e.touches?e.touches[0].clientX:e.clientX}};
@@ -433,6 +483,7 @@ function animate(){
   player.position.z-=speed*f;
   player.position.x+=(targetX-player.position.x)*(1-Math.pow(.8,f));
   while(player.position.z-loopInfo(spawned).board<320)spawnLoop(spawned++);
+  updateGold(prevZ,nt);
   speed=loopInfo(curLoop).v/60;
   for(const row of gates){
    if(row.userData.passed||row.position.z>prevZ+1||row.position.z<player.position.z-1)continue;

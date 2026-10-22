@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+ <defs>
+  <linearGradient id="rim" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#fff7a5"/><stop offset=".3" stop-color="#ffda29"/><stop offset="1" stop-color="#bb7900"/></linearGradient>
+  <radialGradient id="face" cx=".3" cy=".2" r=".85"><stop stop-color="#fff17a"/><stop offset=".45" stop-color="#ffd529"/><stop offset="1" stop-color="#e6a600"/></radialGradient>
+  <linearGradient id="star" x2=".8" y2="1"><stop stop-color="#ffc437"/><stop offset="1" stop-color="#e78a00"/></linearGradient>
+ </defs>
+ <ellipse cx="64" cy="117" rx="43" ry="6" fill="#391d43" opacity=".2"/>
+ <circle cx="64" cy="65" r="55" fill="url(#rim)" stroke="#c89108" stroke-width="2"/>
+ <circle cx="64" cy="61" r="53" fill="url(#rim)"/>
+ <circle cx="64" cy="61" r="45" fill="url(#face)" stroke="#d9a00a" stroke-width="2"/>
+ <circle cx="64" cy="61" r="42" fill="none" stroke="#ffed79" stroke-width="1.5" opacity=".7"/>
+ <path d="M64 29 Q67 29 69 34L77 49 94 52Q100 53 95 58L83 71 85 89Q86 95 80 92L64 84 48 92Q42 95 43 89L45 71 33 58Q28 53 34 52L51 49 59 34Q61 29 64 29Z" fill="#b97400" transform="translate(0 2)"/>
+ <path d="M64 29 Q67 29 69 34L77 49 94 52Q100 53 95 58L83 71 85 89Q86 95 80 92L64 84 48 92Q42 95 43 89L45 71 33 58Q28 53 34 52L51 49 59 34Q61 29 64 29Z" fill="url(#star)" stroke="#dc9400" stroke-width="2" stroke-linejoin="round"/>
+ <path d="M26 34A46 46 0 0 1 84 19" fill="none" stroke="#fffbc2" stroke-width="4" stroke-linecap="round" opacity=".75"/>
+</svg>

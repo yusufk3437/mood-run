@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+ <defs>
+  <linearGradient id="rim" x2=".8" y2="1"><stop stop-color="#b2edff"/><stop offset=".4" stop-color="#53c7ec"/><stop offset="1" stop-color="#147bb2"/></linearGradient>
+  <radialGradient id="face" cx=".3" cy=".2" r=".85"><stop stop-color="#8ce4fa"/><stop offset="1" stop-color="#299bca"/></radialGradient>
+ </defs>
+ <ellipse cx="64" cy="117" rx="43" ry="6" fill="#391d43" opacity=".2"/>
+ <circle cx="64" cy="65" r="55" fill="url(#rim)" stroke="#1575a7" stroke-width="2"/>
+ <circle cx="64" cy="61" r="53" fill="url(#rim)"/>
+ <circle cx="64" cy="61" r="45" fill="url(#face)" stroke="#2391bd" stroke-width="2"/>
+ <circle cx="64" cy="61" r="42" fill="none" stroke="#91e4fa" stroke-width="1.5" opacity=".65"/>
+ <path d="M41 38 85 38 99 57 64 96 29 57Z" fill="#07538a" transform="translate(0 3)"/>
+ <path d="M41 36 85 36 99 55 64 94 29 55Z" fill="#008bc5" stroke="#086b9e" stroke-width="3" stroke-linejoin="round"/>
+ <path d="M41 36 51 55 29 55Z" fill="#0b6eaa"/>
+ <path d="M41 36 64 36 51 55Z" fill="#28c5e4"/>
+ <path d="M64 36 85 36 77 55Z" fill="#13acce"/>
+ <path d="M64 36 77 55 51 55Z" fill="#53dcf1"/>
+ <path d="M85 36 99 55 77 55Z" fill="#067da9"/>
+ <path d="M29 55 51 55 64 94Z" fill="#008cc5"/>
+ <path d="M51 55 77 55 64 94Z" fill="#10b9d9"/>
+ <path d="M77 55 99 55 64 94Z" fill="#0079ad"/>
+ <path d="M26 34A46 46 0 0 1 84 19" fill="none" stroke="#dcfaff" stroke-width="4" stroke-linecap="round" opacity=".8"/>
+</svg>
