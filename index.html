@@ -21,16 +21,16 @@ html,body{margin:0;height:100%;overflow:hidden;background:#6d5dfc;font-family:'V
 .g{--c:#22c55e;--d:#14532d}.b{--c:#3b82f6;--d:#1e3a8a}.y{--c:#f59e0b;--d:#92400e}.p{--c:#a855f7;--d:#581c87}.k{--c:#6b7280;--d:#374151}
 .btn svg,.pill svg,.btn img,.pill img{width:22px;height:22px;flex:none}
 [data-ic]{display:inline-flex;align-items:center;flex:none}
-.wallet{position:absolute;top:calc(env(safe-area-inset-top,0px) + 16px);left:16px;right:16px;display:flex;justify-content:center;gap:14px}
-.wallet-item{display:flex;align-items:center;gap:8px;min-width:0;flex:1;max-width:180px;padding:8px 12px 8px 6px;border-radius:22px;background:linear-gradient(150deg,#473571,#261b48);border:1px solid #a18cbe;box-shadow:0 5px 0 #201535,0 8px 20px #160d3033}
-.wallet-item img{width:56px;height:56px;filter:drop-shadow(0 3px 3px #140b3655)}
-.wallet-item small{display:block;font-size:10px;font-weight:700;letter-spacing:.12em;margin-bottom:4px}
-.wallet-item b{display:block;font-family:'Fredoka',sans-serif;font-size:23px;line-height:1;overflow-wrap:anywhere}
+.wallet{position:absolute;top:calc(env(safe-area-inset-top,0px) + 12px);right:calc(env(safe-area-inset-right,0px) + 12px);display:flex;gap:8px;width:212px;max-width:calc(100% - 24px);height:min(54px,30vh)}
+.wallet-item{display:flex;align-items:center;gap:5px;min-width:0;flex:1;padding:5px 7px 5px 4px;border-radius:16px;background:linear-gradient(150deg,#473571,#261b48);border:1px solid #a18cbe;box-shadow:0 3px 0 #201535,0 5px 12px #160d3033}
+.wallet-item img{width:32px;height:32px;filter:drop-shadow(0 2px 2px #140b3655)}
+.wallet-item>div{min-width:0}
+.wallet-item small{display:block;font-size:8px;font-weight:700;letter-spacing:.08em;margin-bottom:3px}
+.wallet-item b{display:block;font-family:'Fredoka',sans-serif;font-size:17px;line-height:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .wallet-gold{border-color:#cfad5e;color:#fff0b4}.wallet-gem{border-color:#64badc;color:#c3f3ff}
-#s-menu{padding-top:110px}
+#s-menu{padding-top:80px}
 @keyframes coin-pop{50%{transform:scale(1.22);color:#ffe06d}}
 .coin-pop{animation:coin-pop .25s ease-out}
-@media(max-width:350px){.wallet{gap:8px;left:10px;right:10px}.wallet-item{padding-right:7px;gap:5px}.wallet-item img{width:46px;height:46px}.wallet-item b{font-size:21px}}
 .pill{display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.35);border:2px solid #fff;border-radius:20px;padding:4px 12px;font-size:18px}
 .note{opacity:.85;text-align:center;font-size:14px;max-width:290px;margin:0}
 .err{color:#fde047;min-height:20px;margin:0;font-size:14px;text-align:center}
@@ -431,7 +431,7 @@ function init(){
  const mk=c=>{const root=new THREE.Group(),body=new THREE.Group(),mat=new THREE.MeshStandardMaterial({color:c,roughness:.62,metalness:0});
   const oval=(parent,x,y,z,sx,sy,sz)=>{const mesh=new THREE.Mesh(mascotSphere,mat);mesh.position.set(x,y,z);mesh.scale.set(sx,sy,sz);parent.add(mesh);return mesh};
   oval(body,0,1.32,0,.54,.66,.38);
-  oval(body,0,2.36,0,.72,.74,.65);
+  oval(body,0,2.30,0,.63,.65,.57);
   const arms=[];
   for(const side of [-1,1]){
    const arm=new THREE.Group();arm.position.set(side*.46,1.8,0);
