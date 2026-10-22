@@ -252,7 +252,7 @@ function setupConn(c){
    if(!Number.isFinite(d.x)||!Number.isFinite(d.z)||!Number.isInteger(d.rd)||!['START','PLAYING','GAMEOVER'].includes(d.st))return;
    if(!isHost&&d.st==='PLAYING'&&d.rd>round&&Number.isInteger(d.sd))startRound(d.sd,d.rd); // guest joins a round it missed
    if(d.rd!==round)return;
-   oppX=Math.max(-BND,Math.min(BND,d.x));oppZ=d.z;oppState=d.st;if(FACES.includes(d.mood)&&oppFace)oppFace.material=faceMats[d.mood];
+   oppX=Math.max(-BND,Math.min(BND,d.x));oppZ=d.z;oppState=d.st;
   }
   else if(d.type==='gameover'){if(d.rd===round)handleGameOver(cleanName(d.blame)||t('rival'))}
  });
@@ -279,7 +279,7 @@ function handleGameOver(name){
 // ---------- 3D ENGINE ----------
 const FACES=['smile','neutral','sad'],GATE_COLORS=[0xf05f7b,0x42b9e7,0xffcf45],LW=3.2,BND=LW*1.1,P=6.4,TL=512,GH=4.5,GW=LW*.95;
 const GAP0=2,GAP_STEP=.1,GAP_MIN=1.2,V0=36,V_STEP=1.2,V_MAX=50; // time between gates: 2.0s, 1.9s, 1.8s ... down to 1.2s; speed in units/second
-let scene,camera,renderer,trackTex,curbTex,trackM,curbL,curbR,ground,player,pBody,pLL,pRL,opp,oBody,oLL,oRL,playerLabel,oppLabel,playerFace,oppFace,pMat,oMat,faceMats={},wf={},frameMats,panelMats,pMats,gPillar,gTop,gPanel,gCard,bGeo,pGeo;
+let scene,camera,renderer,trackTex,curbTex,trackM,curbL,curbR,ground,player,pBody,pLL,pRL,opp,oBody,oLL,oRL,playerLabel,oppLabel,pMat,oMat,faceMats={},wf={},frameMats,panelMats,pMats,gPillar,gTop,gPanel,gCard,bGeo,pGeo;
 let gates=[],boards=[],parts=[],deco=[];
 const MAX_LIVES=3;
 let state='START',speed=V0/60,loopCount=1,lives=MAX_LIVES,runTime=0,oRun=0,targetX=0,dragging=false,prevPX=0,spawned=0,curLoop=0,seqIdx=0,score=0,runCoins=0,lastSync=0,lastFrame=0;
@@ -332,7 +332,15 @@ function spawnGateRow(z,j,data){
 }
 function burst(x,z){for(let i=0;i<16;i++){const p=new THREE.Mesh(pGeo,pMats[i%5]);p.position.set(x+(Math.random()-.5)*3,2,z);p.userData={vx:(Math.random()-.5)*.4,vy:Math.random()*.4+.2,vz:(Math.random()-.5)*.4,life:1};scene.add(p);parts.push(p)}}
 function clearWorld(){gates.forEach(g=>scene.remove(g));gates=[];boards.forEach(killBoard);boards=[];parts.forEach(p=>scene.remove(p));parts=[]}
-function resetWorld(){clearWorld();loops.length=0;spawned=0;curLoop=0;seqIdx=0;score=0;runCoins=0;lives=MAX_LIVES;loopCount=1;speed=V0/60;targetX=0;player.position.set(0,0,0);pBody.rotation.set(0,0,0);playerFace.material=oppFace.material=faceMats.neutral;updateBar();updateHud()}
+function resetWorld(){clearWorld();loops.length=0;spawned=0;curLoop=0;seqIdx=0;score=0;runCoins=0;lives=MAX_LIVES;loopCount=1;speed=V0/60;targetX=0;player.position.set(0,0,0);pBody.rotation.set(0,0,0);updateBar();updateHud()}
+
+function poseRunner(body,left,right,phase,lean=0){
+ const stride=Math.sin(phase);
+ body.position.y=.05+Math.abs(stride)*.07;body.rotation.z=lean;
+ left.rotation.x=stride*.48;right.rotation.x=-stride*.48;
+ body.userData.arms[0].rotation.x=-stride*.45;
+ body.userData.arms[1].rotation.x=stride*.45;
+}
 
 function init(){
  scene=new THREE.Scene();
@@ -373,13 +381,26 @@ function init(){
  const starMats=[0xfff1b8,0xffffff,0xf8c7ed].map(c=>new THREE.MeshBasicMaterial({color:c}));
  for(let i=0;i<46;i++){const star=new THREE.Mesh(new THREE.SphereGeometry(.045+Math.random()*.055,8,6),starMats[i%starMats.length]);scatter(star,20-Math.random()*420,true);star.userData.cloud=1;star.userData.ph=Math.random()*6;scene.add(star);deco.push(star)}
 
- // characters
- const mk=c=>{const root=new THREE.Group(),body=new THREE.Group(),mat=new THREE.MeshStandardMaterial({color:c,roughness:.24,metalness:.03});
-  const torso=new THREE.Mesh(new THREE.SphereGeometry(.48,24,18),mat);torso.scale.set(.92,1.4,.82);torso.position.y=1.2;
-  const head=new THREE.Mesh(new THREE.SphereGeometry(.46,24,24),mat);head.position.y=2.18;
-  const lg=new THREE.BoxGeometry(.25,.9,.25),l=new THREE.Mesh(lg,mat),r=new THREE.Mesh(lg,mat);l.position.set(-.18,.45,0);r.position.set(.18,.45,0);
-  body.add(torso,head,l,r);root.add(body);
-  const sh=new THREE.Mesh(new THREE.CircleGeometry(.7,16),new THREE.MeshBasicMaterial({color:0,transparent:true,opacity:.25}));sh.rotation.x=-Math.PI/2;sh.position.y=.04;root.add(sh);
+ // Faceless mascot: oversized round head, soft torso, full arms and rounded feet.
+ const mascotSphere=new THREE.SphereGeometry(1,32,24);
+ const mk=c=>{const root=new THREE.Group(),body=new THREE.Group(),mat=new THREE.MeshStandardMaterial({color:c,roughness:.62,metalness:0});
+  const oval=(parent,x,y,z,sx,sy,sz)=>{const mesh=new THREE.Mesh(mascotSphere,mat);mesh.position.set(x,y,z);mesh.scale.set(sx,sy,sz);parent.add(mesh);return mesh};
+  oval(body,0,1.32,0,.54,.66,.38);
+  oval(body,0,2.36,0,.72,.74,.65);
+  const arms=[];
+  for(const side of [-1,1]){
+   const arm=new THREE.Group();arm.position.set(side*.46,1.8,0);
+   const curve=new THREE.CatmullRomCurve3([new THREE.Vector3(0,0,0),new THREE.Vector3(side*.18,-.32,0),new THREE.Vector3(side*.25,-.68,.02)]);
+   arm.add(new THREE.Mesh(new THREE.TubeGeometry(curve,12,.155,12,false),mat));
+   oval(arm,0,0,0,.17,.18,.17);
+   oval(arm,side*.25,-.77,.02,.18,.23,.145);
+   oval(arm,side*.12,-.76,-.045,.075,.12,.08);
+   body.add(arm);arms.push(arm);
+  }
+  body.userData.arms=arms;
+  const leg=side=>{const pivot=new THREE.Group();pivot.position.set(side*.25,.82,0);oval(pivot,0,-.25,0,.245,.42,.24);oval(pivot,0,-.64,-.08,.255,.17,.33);body.add(pivot);return pivot};
+  const l=leg(-1),r=leg(1);root.add(body);
+  const sh=new THREE.Mesh(new THREE.CircleGeometry(.85,24),new THREE.MeshBasicMaterial({color:0x51446e,transparent:true,opacity:.2}));sh.rotation.x=-Math.PI/2;sh.position.y=.04;root.add(sh);
   scene.add(root);return{root,body,l,r,mat}};
  const a=mk(0xef4444);player=a.root;pBody=a.body;pLL=a.l;pRL=a.r;pMat=a.mat;
  const b=mk(0x0ea5e9);opp=b.root;oBody=b.body;oLL=b.l;oRL=b.r;oMat=b.mat;opp.position.set(0,-100,500);
@@ -391,7 +412,6 @@ function init(){
  frameMats=GATE_COLORS.map(c=>new THREE.MeshStandardMaterial({color:c,roughness:.22,metalness:.04}));
  panelMats=GATE_COLORS.map(c=>new THREE.MeshStandardMaterial({color:c,transparent:true,opacity:.46,roughness:.24,side:THREE.DoubleSide}));
  gPillar=new THREE.CylinderGeometry(.22,.22,GH,14);gTop=new THREE.CylinderGeometry(.28,.28,GW,14);gPanel=new THREE.PlaneGeometry(GW-.4,GH-.5);gCard=new THREE.PlaneGeometry(2,2);
- const moodFaceGeo=new THREE.PlaneGeometry(.58,.58);playerFace=new THREE.Mesh(moodFaceGeo,faceMats.neutral);playerFace.position.set(0,2.18,.48);pBody.add(playerFace);oppFace=new THREE.Mesh(moodFaceGeo,faceMats.neutral);oppFace.position.set(0,2.18,.48);oBody.add(oppFace);
  bGeo=new THREE.PlaneGeometry(14,7);pGeo=new THREE.BoxGeometry(.3,.3,.3);
  pMats=[0xff5a5f,0x4dabf7,0x51cf66,0xfcc419,0xcc5de8].map(c=>new THREE.MeshBasicMaterial({color:c}));
 
@@ -418,7 +438,6 @@ function animate(){
    if(row.userData.passed||row.position.z>prevZ+1||row.position.z<player.position.z-1)continue;
    let face=null,best=1.5;
    row.children.forEach(c=>{if(c.userData.isGate){const d=Math.abs(player.position.x-c.userData.laneX);if(d<best){best=d;face=c.userData.face}}});
-   if(face&&playerFace)playerFace.material=faceMats[face];
    if(face===row.userData.req){row.userData.passed=true;burst(player.position.x,row.position.z);row.position.y-=100;score++;runCoins+=5;seqIdx=Math.max(seqIdx,row.userData.seq+1);updateBar();updateHud();beep(660,.08)}
    else{
     lives=Math.max(0,lives-1);row.userData.passed=true;row.position.y-=100;
@@ -434,8 +453,7 @@ function animate(){
   for(let i=boards.length-1;i>=0;i--)if(boards[i].position.z>player.position.z+30){killBoard(boards[i]);boards.splice(i,1)}
  }
  if(state==='PLAYING'||state==='START'){
-  runTime+=.15*f;pBody.position.y=Math.abs(Math.sin(runTime))*.2;pBody.rotation.z=(targetX-player.position.x)*-.05;
-  pLL.rotation.x=Math.sin(runTime)*.8;pRL.rotation.x=-Math.sin(runTime)*.8;pLL.position.y=.45+Math.abs(Math.sin(runTime))*.3;pRL.position.y=.45+Math.abs(Math.cos(runTime))*.3;
+  runTime+=.15*f;poseRunner(pBody,pLL,pRL,runTime,(targetX-player.position.x)*-.05);
  }else if(state==='GAMEOVER'&&pBody.rotation.x>-Math.PI/2){pBody.rotation.x-=.1;pBody.position.y=Math.max(.2,pBody.position.y-.05)}
 
  // world follows the player; floor patterns scroll so speed is always visible
@@ -445,12 +463,12 @@ function animate(){
  for(const d of deco){if(d.position.z>pz+30)scatter(d,pz-300-Math.random()*60,d.userData.cloud);d.rotation.y+=.01*f;if(!d.userData.cloud){d.rotation.x+=.006*f;d.position.y=d.userData.y+Math.sin(nt*.002+d.userData.ph)*.5}}
  const hue=(nt/2500)%1;if(SKINS[skin].c<0)pMat.color.setHSL(hue,.85,.55);if(isMulti&&SKINS[oppSkin].c<0)oMat.color.setHSL(hue,.85,.55);
 
- if(isMulti&&conn&&conn.open&&nt-lastSync>33){lastSync=nt;conn.send({type:'sync',x:player.position.x,z:player.position.z,st:state,rd:round,sd:seed,mood:playerFace&&Object.keys(faceMats).find(k=>faceMats[k]===playerFace.material)})}
+ if(isMulti&&conn&&conn.open&&nt-lastSync>33){lastSync=nt;conn.send({type:'sync',x:player.position.x,z:player.position.z,st:state,rd:round,sd:seed})}
  if(isMulti){
   opp.position.x+=(oppX-opp.position.x)*.3;
   if(oppState==='PLAYING'){
    opp.position.z=pz+(isHost?.05:-.05); // always shown side by side with you
-   oRun+=.15*f;oBody.rotation.x=0;oBody.position.y=Math.abs(Math.sin(oRun))*.2;oLL.rotation.x=Math.sin(oRun)*.8;oRL.rotation.x=-Math.sin(oRun)*.8;
+   oRun+=.15*f;oBody.rotation.x=0;poseRunner(oBody,oLL,oRL,oRun);
   }else if(oppState==='GAMEOVER'){opp.position.z=oppZ;oBody.rotation.x=-Math.PI/2;oBody.position.y=.2}
  }
  for(let i=parts.length-1;i>=0;i--){const p=parts[i],u=p.userData;p.position.x+=u.vx;p.position.y+=u.vy;p.position.z+=u.vz;u.vy-=.01;u.life-=.02;p.scale.setScalar(Math.max(0,u.life));if(u.life<=0){scene.remove(p);parts.splice(i,1)}}
