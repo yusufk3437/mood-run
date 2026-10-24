@@ -8,9 +8,10 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@600&family=Varela+Round&display=swap');
 *{box-sizing:border-box}
-html,body{margin:0;height:100%;overflow:hidden;background:#6d5dfc;font-family:'Varela Round',sans-serif;color:#fff;touch-action:none;user-select:none;-webkit-user-select:none}
+html,body{margin:0;height:100%;overflow:hidden;background:#100b26;font-family:'Varela Round',sans-serif;color:#fff;touch-action:none;user-select:none;-webkit-user-select:none}
 #gc,#ui,.scr{position:absolute;top:0;left:0;width:100%;height:100%}
 #gc{z-index:1}#ui{z-index:10;pointer-events:none}
+#gc{background:#46396a url('assets/dream-sky.webp') center center/cover no-repeat}
 .scr{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:14px;padding:20px;background:rgba(40,16,90,.72);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);pointer-events:auto;opacity:0;visibility:hidden;transition:opacity .3s}
 .scr.on{opacity:1;visibility:visible}
 .ttl,.btn,.pill,.sk,.gd{font-family:'Fredoka',cursive;font-weight:600}
@@ -28,7 +29,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#6d5dfc;font-family:'V
 .wallet-item small{display:block;font-size:8px;font-weight:700;letter-spacing:.08em;margin-bottom:3px}
 .wallet-item b{display:block;font-family:'Fredoka',sans-serif;font-size:17px;line-height:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .wallet-gold{border-color:#cfad5e;color:#fff0b4}.wallet-gem{border-color:#64badc;color:#c3f3ff}
-#s-menu{padding-top:80px}
+#s-menu{padding-top:80px;background:linear-gradient(180deg,rgba(16,11,38,.7),rgba(30,24,67,.45));-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
 @keyframes coin-pop{50%{transform:scale(1.22);color:#ffe06d}}
 .coin-pop{animation:coin-pop .25s ease-out}
 .pill{display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.35);border:2px solid #fff;border-radius:20px;padding:4px 12px;font-size:18px}
@@ -41,7 +42,27 @@ input{width:100%;max-width:290px;padding:12px 18px;border-radius:20px;border:3px
 #bar{width:58%;height:14px;margin:0 auto;background:rgba(255,255,255,.35);border:2px solid #fff;border-radius:10px;overflow:hidden}
 #bar i{display:block;height:100%;width:0;background:#4ade80;transition:width .3s}
 #hud-lives{color:#fda4af;letter-spacing:1px}
+.hud-group{display:flex;gap:5px;align-items:center}
+#hud .pill{font-size:14px;padding:4px 7px;gap:3px}
+#hud .pill img{width:20px;height:20px}
+@media(max-width:350px){#hud{left:8px;right:8px}.hud-group{gap:3px}#hud .pill{padding:4px 5px;font-size:12px}#hud .pill img{width:17px;height:17px}}
 #skin-grid,#gift-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;width:100%;max-width:330px}
+.skin-tabs{display:flex;gap:7px;width:100%;max-width:330px}
+.skin-tabs button{flex:1;padding:10px 4px;border:1px solid #9c8bbb;border-radius:14px;background:#252044;color:#d9d3ed;font:600 15px 'Fredoka',sans-serif;cursor:pointer}
+.skin-tabs button[aria-selected="true"]{background:var(--rarity);border-color:#fff;color:#fff;box-shadow:0 3px 0 #130b2a}
+#skin-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.sk{cursor:pointer;color:#fff;font-family:inherit}
+.skin-name{font-size:11px}
+#skin-category-note{min-height:18px;margin:0;font-size:12px;color:#e5d8ff;text-align:center}
+#s-terms{background:#100b26;backdrop-filter:none;-webkit-backdrop-filter:none;z-index:25}
+.terms-card{width:min(100%,420px);max-height:calc(100% - 32px);overflow:auto;background:#e9d8c6;color:#49347c;border:3px solid #070610;border-radius:32px;box-shadow:0 6px 0 #080511;text-align:center}
+.terms-card h1{margin:0;padding:16px 12px 8px;font:600 40px 'Fredoka',sans-serif;color:#fff2dc;text-shadow:2px 2px 0 #27265c,-2px -2px 0 #27265c;background:#4267cd;border-radius:28px 28px 0 0}
+.terms-copy{padding:18px 24px;font-size:14px;line-height:1.65}
+.terms-copy strong{display:block;font-size:17px;margin-bottom:12px}
+.terms-copy p{margin:0 0 14px}
+.terms-copy a{display:block;color:#3073bd;font-weight:bold;text-decoration:underline}
+.terms-actions{padding:18px;background:#5368ce;display:flex;justify-content:center}
+.terms-actions .btn{max-width:180px;border:2px solid #182408;border-radius:13px}
 .sk,.gd{background:rgba(255,255,255,.14);border:3px solid transparent;border-radius:16px;padding:8px 2px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-size:12px;min-height:92px;text-align:center}
 .sel,.cur{border-color:#fde047;background:rgba(253,224,71,.22)}
 .sk i{width:42px;height:42px;border-radius:50%;border:3px solid #fff;display:block}
@@ -56,10 +77,10 @@ input{width:100%;max-width:290px;padding:12px 18px;border-radius:20px;border:3px
 <div id="gc"></div>
 <div id="toast"></div>
 <div id="ui">
- <div id="hud"><div class="row"><div style="display:flex;gap:6px"><div class="pill" id="hud-lvl"></div><div class="pill" id="hud-lives" aria-label="Lives"></div></div><div class="pill"><span data-ic="coin"></span><b id="hud-coins">0</b></div></div><div id="bar"><i id="bar-fill"></i></div></div>
+ <div id="hud"><div class="row"><div class="hud-group"><div class="pill" id="hud-lvl"></div><div class="pill" id="hud-lives" aria-label="Lives"></div></div><div class="hud-group"><div class="pill"><span data-ic="coin"></span><b id="hud-coins">0</b></div><div class="pill"><span data-ic="gem"></span><b id="hud-gems">0</b></div></div></div><div id="bar"><i id="bar-fill"></i></div></div>
 
- <div class="scr on" id="s-splash" style="background:linear-gradient(135deg,#f95010,#ff1a05);-webkit-backdrop-filter:none;backdrop-filter:none" onclick="setScreen('s-menu')">
-  <img src="data:image/jpeg;base64,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" alt="KADO" style="width:92%;max-width:540px;-webkit-mask-image:radial-gradient(ellipse at center,#000 52%,transparent 78%);mask-image:radial-gradient(ellipse at center,#000 52%,transparent 78%)">
+ <div class="scr on" id="s-splash" style="background:#100b26;-webkit-backdrop-filter:none;backdrop-filter:none" onclick="setScreen('s-menu')">
+  <img src="assets/studio-logo.svg" alt="KADO" style="width:92%;max-width:540px">
   <div class="ttl" style="font-size:2.2rem;letter-spacing:.45em;margin-top:-10px">games</div>
  </div>
 
@@ -69,7 +90,6 @@ input{width:100%;max-width:290px;padding:12px 18px;border-radius:20px;border:3px
    <div class="wallet-item wallet-gem"><span data-ic="gem"></span><div><small data-currency-name="gems">GEMS</small><b class="gn">0</b></div></div>
   </div>
   <div class="ttl" style="font-size:3.6rem">MOOD<br><span style="color:#fde047">RUN</span></div>
-  <div style="letter-spacing:.3em;opacity:.8;margin-bottom:10px">KADO games</div>
   <button class="btn g" onclick="onPlay()"><span data-i="play"></span></button>
   <button class="btn p" onclick="openShop()"><span data-i="shop"></span></button>
   <button class="btn y" onclick="openDaily()"><span data-ic="gift"></span><span data-i="daily"></span><i id="gift-dot"></i></button>
@@ -120,16 +140,22 @@ input{width:100%;max-width:290px;padding:12px 18px;border-radius:20px;border:3px
  <div class="scr" id="s-set">
   <div class="ttl" style="font-size:2rem" data-i="settings"></div>
   <div class="pill" id="set-name"></div>
-  <button class="btn b" onclick="toggleLang()"><span id="lang-btn"></span></button>
   <button class="btn b" onclick="toggleSetting('sound')"><span id="btn-sound"></span></button>
   <button class="btn b" onclick="toggleSetting('vib')"><span id="btn-vib"></span></button>
+  <p class="note"><a href="terms.html" target="_blank" rel="noopener" style="color:#b9e6ff">Terms of Service</a> &middot; <a href="privacy.html" target="_blank" rel="noopener" style="color:#b9e6ff">Privacy Notice</a></p>
   <button class="btn k" onclick="setScreen('s-menu')"><span data-i="back"></span></button>
  </div>
 
  <div class="scr" id="s-shop">
   <div class="pill" style="position:absolute;top:calc(env(safe-area-inset-top,0px) + 14px);right:14px"><span data-ic="coin"></span><b class="cn">0</b></div>
   <div class="ttl" style="font-size:2rem" data-i="shop"></div>
-  <div id="skin-grid"></div>
+  <div class="skin-tabs" role="tablist" aria-label="Skin rarity">
+   <button type="button" role="tab" id="skin-tab-rare" aria-controls="skin-grid" onclick="selectSkinCategory('Rare')" style="--rarity:#2689bf">Rare</button>
+   <button type="button" role="tab" id="skin-tab-epic" aria-controls="skin-grid" onclick="selectSkinCategory('Epic')" style="--rarity:#9550d8">Epic</button>
+   <button type="button" role="tab" id="skin-tab-majestic" aria-controls="skin-grid" onclick="selectSkinCategory('Majestic')" style="--rarity:#b37a19">Majestic</button>
+  </div>
+  <p id="skin-category-note"></p>
+  <div id="skin-grid" role="tabpanel"></div>
   <button class="btn y" onclick="watchAd50()"><span data-ic="ad"></span><span data-i="ad50"></span></button>
   <button class="btn k" onclick="setScreen('s-menu')"><span data-i="back"></span></button>
  </div>
@@ -152,12 +178,26 @@ input{width:100%;max-width:290px;padding:12px 18px;border-radius:20px;border:3px
   <div class="ttl" style="font-size:2.6rem;color:#fecaca" data-i="oops"></div>
   <p class="ttl" id="fail-blame" style="font-size:1.1rem;margin:0"></p>
   <div class="pill"><span data-ic="coin"></span><b id="over-coins">+0</b></div>
+  <div class="pill"><span data-ic="gem"></span><b id="over-gems">+0</b></div>
   <p id="score-line" class="note"></p>
   <div id="wheel"><b style="background:#f97316">x2</b><b style="background:#a855f7">x3</b><b style="background:#3b82f6">x4</b><b style="background:#22c55e">x5</b><i id="ptr"></i></div>
   <button class="btn y" id="btn-claim" onclick="claimWheel()"><span data-ic="ad"></span><span data-i="claim"></span></button>
   <button class="btn g" id="btn-again" onclick="playAgain()"><span data-i="again"></span></button>
   <p class="note" id="again-wait" style="display:none" data-i="wait"></p>
   <button class="btn k" onclick="leaveMenu()"><span data-i="leave"></span></button>
+ </div>
+ <div class="scr" id="s-terms" role="dialog" aria-modal="true" aria-labelledby="terms-title">
+  <div class="terms-card">
+   <h1 id="terms-title">WELCOME</h1>
+   <div class="terms-copy">
+    <strong>Please accept the terms</strong>
+    <p>Welcome to Mood Run! Please review our Terms of Service and Privacy Notice before playing.</p>
+    <p>By choosing ACCEPT, you agree to the Terms of Service and acknowledge the Privacy Notice.</p>
+    <a href="terms.html" target="_blank" rel="noopener">Terms of Service</a>
+    <a href="privacy.html" target="_blank" rel="noopener">Privacy Notice</a>
+   </div>
+   <div class="terms-actions"><button type="button" class="btn g" onclick="acceptTerms()">ACCEPT</button></div>
+  </div>
  </div>
 </div>
 
@@ -167,6 +207,9 @@ if(!CanvasRenderingContext2D.prototype.roundRect){CanvasRenderingContext2D.proto
 
 const $=id=>document.getElementById(id);
 const store={get(k,d){try{const v=localStorage.getItem(k);return v===null?d:v}catch(e){return d}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+const TERMS_VERSION='2026-10-24';
+let termsAccepted=store.get('mood_terms_version','')===TERMS_VERSION;
+function acceptTerms(){termsAccepted=true;store.set('mood_terms_version',TERMS_VERSION);setScreen('s-menu')}
 
 // ---------- ICONS (drawn, no emoji) ----------
 const IC={
@@ -181,16 +224,16 @@ document.querySelectorAll('[data-ic]').forEach(e=>{e.innerHTML=IC[e.dataset.ic]}
 // ---------- LANGUAGES ----------
 const D={
 en:{play:'PLAY',shop:'SHOP',daily:'DAILY GIFT',settings:'SETTINGS',nameQ:"What's your name?",nameNote:'This name will be saved and cannot be changed later.',nameHint:'Type your name',next:'CONTINUE',nameErr:'Type at least 2 characters.',single:'SINGLE PLAYER',multi:'MULTIPLAYER',back:'BACK',createRoom:'CREATE ROOM',joinRoom:'JOIN ROOM',hostT:'Create Room',giveCode:'Give this 4-character code to your friend:',players:'Players',start:'START GAME',cancel:'CANCEL',joinT:'Join Room',enterCode:'Enter the 4-character room code:',join:'JOIN',player:'Player',sound:'SOUND',vib:'VIBRATION',on:'ON',off:'OFF',lang:'LANGUAGE',langName:'ENGLISH',oops:'OOPS!',mistake:n=>n+' MADE A MISTAKE!',gates:'Gates',best:'Best',claim:'CLAIM BONUS',again:'PLAY AGAIN',leave:'MENU',wait:'Waiting for the host to restart...',remember:'REMEMBER THE ORDER!',level:'LEVEL',rival:'Rival',you:'You',adT:'AD',adNote:'Test ad. The real ad will be added later.',equipped:'EQUIPPED',select:'SELECT',poor:'Not enough coins',ad50:'WATCH AD  +50',day:'DAY',claimGift:'CLAIM',comeBack:'Come back tomorrow',opening:'Opening room...',roomOpen:'Room is open! Waiting for your friend to enter the code...',connErr:'Connection error',oppIn:'Opponent connected! You can start the game.',badCode:'Please enter the 4-character room code.',connecting:'Connecting to room...',joined:'Joined! Waiting for the host to start...',notFound:'Connection error or room not found!',oppLeft:'Opponent left the room'},
-tr:{play:'OYNA',shop:'MAĞAZA',daily:'GÜNLÜK HEDİYE',settings:'AYARLAR',nameQ:'İsmin ne?',nameNote:'Bu isim kaydedilecek ve sonradan değiştirilemeyecek.',nameHint:'İsmini yaz',next:'DEVAM',nameErr:'En az 2 karakter yaz.',single:'TEK OYUNCULU',multi:'ÇOK OYUNCULU',back:'GERİ',createRoom:'ODA KUR',joinRoom:'ODAYA KATIL',hostT:'Oda Kur',giveCode:'Arkadaşına bu 4 haneli kodu ver:',players:'Oyuncu',start:'OYUNU BAŞLAT',cancel:'İPTAL',joinT:'Odaya Katıl',enterCode:'4 haneli oda kodunu gir:',join:'KATIL',player:'Oyuncu',sound:'SES',vib:'TİTREŞİM',on:'AÇIK',off:'KAPALI',lang:'DİL',langName:'TÜRKÇE',oops:'UPS!',mistake:n=>n+' HATA YAPTI!',gates:'Kapı',best:'En iyi',claim:'BONUSU AL',again:'TEKRAR OYNA',leave:'MENÜ',wait:'Kurucunun yeniden başlatması bekleniyor...',remember:'SIRAYI HATIRLA!',level:'SEVİYE',rival:'Rakip',you:'Sen',adT:'REKLAM',adNote:'Test reklamı. Gerçek reklam sonra eklenecek.',equipped:'SEÇİLİ',select:'SEÇ',poor:'Yeterli altının yok',ad50:'REKLAM İZLE  +50',day:'GÜN',claimGift:'AL',comeBack:'Yarın tekrar gel',opening:'Oda açılıyor...',roomOpen:'Oda açıldı! Arkadaşının kodu girmesi bekleniyor...',connErr:'Bağlantı hatası',oppIn:'Rakip bağlandı! Oyunu başlatabilirsin.',badCode:'Lütfen 4 haneli oda kodunu gir.',connecting:'Odaya bağlanılıyor...',joined:'Odaya girildi! Kurucunun başlatması bekleniyor...',notFound:'Bağlantı hatası veya oda bulunamadı!',oppLeft:'Rakip odadan ayrıldı'}};
-let lang=store.get('kado_lang','')||((navigator.language||'en').toLowerCase().indexOf('tr')===0?'tr':'en');
-const t=(k,...a)=>{const v=D[lang][k]!==undefined?D[lang][k]:D.en[k];return typeof v==='function'?v(...a):v};
+};
+const lang='en';
+const t=(k,...a)=>{const v=D.en[k];return typeof v==='function'?v(...a):v};
 
 // ---------- SAVED DATA ----------
-const cleanName=n=>String(n||'').replace(/[^\p{L}\p{N} _.-]/gu,'').trim().slice(0,12);
+const cleanName=n=>String(n||'').replace(/[\u0131\u0130]/g,c=>c==='\u0131'?'i':'I').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Za-z0-9 _.-]/g,'').trim().slice(0,12);
 let savedName=cleanName(store.get('kado_name',''));
 let soundOn=store.get('kado_sound','1')==='1',vibOn=store.get('kado_vib','1')==='1';
 let coins=+store.get('kado_coins','0')||0;
-const gems=Math.max(0,Math.floor(+store.get('kado_gems','0')||0));
+let gems=Math.max(0,Math.floor(+store.get('kado_gems','0')||0));
 const SKINS=[{c:0xeaf8ff,p:0},{c:0x3b82f6,p:100},{c:0x22c55e,p:150},{c:0xa855f7,p:200},{c:0xf97316,p:300},{c:0xec4899,p:400},{c:0xfacc15,p:600},{c:-1,p:1000}]; // c:-1 = rainbow
 let owned;try{owned=JSON.parse(store.get('kado_owned','[0]'));if(!Array.isArray(owned))owned=[0]}catch(e){owned=[0]}
 let skin=+store.get('kado_skin','0')||0;if(!owned.includes(skin)||!SKINS[skin])skin=0;
@@ -202,23 +245,37 @@ function beep(f,d){if(!soundOn)return;try{audioCtx=audioCtx||new(window.AudioCon
 const buzz=ms=>{if(vibOn&&navigator.vibrate)navigator.vibrate(ms)};
 function toast(msg,ms=3000){const e=$('toast');e.textContent=msg;e.style.display='block';clearTimeout(toast.h);toast.h=setTimeout(()=>{e.style.display='none'},ms)}
 window.addEventListener('error',e=>{if(e.message&&e.message!=='Script error.')toast('Error: '+e.message,10000)});
-function setScreen(id){document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));if(id)$(id).classList.add('on');$('hud').style.display=id===null?'flex':'none';cur=id}
+function setScreen(id){if(!termsAccepted&&id!=='s-splash')id='s-terms';document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));if(id)$(id).classList.add('on');$('hud').style.display=id===null?'flex':'none';cur=id}
 function addCoins(n){coins+=n;store.set('kado_coins',String(coins));document.querySelectorAll('.cn').forEach(e=>{e.textContent=coins});updateHud()}
-function updateHud(){$('hud-lvl').textContent=t('level')+' '+loopCount;$('hud-lives').textContent='♥ '.repeat(lives)+'♡ '.repeat(MAX_LIVES-lives);$('hud-coins').textContent=coins+(state==='PLAYING'?runCoins:0);document.querySelectorAll('.gn').forEach(e=>{e.textContent=gems});document.querySelectorAll('[data-currency-name]').forEach(e=>{e.textContent=e.dataset.currencyName==='gold'?(lang==='tr'?'ALTIN':'GOLD'):(lang==='tr'?'ELMAS':'GEMS')})}
+function updateHud(){$('hud-lvl').textContent=t('level')+' '+loopCount;$('hud-lives').textContent='♥ '.repeat(lives)+'♡ '.repeat(MAX_LIVES-lives);$('hud-coins').textContent=coins+(state==='PLAYING'?runCoins:0);$('hud-gems').textContent=gems;document.querySelectorAll('.gn').forEach(e=>{e.textContent=gems});document.querySelectorAll('[data-currency-name]').forEach(e=>{e.textContent=e.dataset.currencyName==='gold'?'GOLD':'GEMS'})}
 function updateBar(){$('bar-fill').style.width=(seqIdx/3*100)+'%'}
 function applyLang(){document.documentElement.lang=lang;document.querySelectorAll('[data-i]').forEach(e=>{e.textContent=t(e.dataset.i)});document.querySelectorAll('[data-p]').forEach(e=>{e.placeholder=t(e.dataset.p)});refreshSettings();renderShop();refreshDaily();updateHud()}
 
 // ---------- NAME / SETTINGS ----------
 function onPlay(){setScreen(savedName?'s-mode':'s-name')}
 function saveName(){const n=cleanName($('name-in').value);if(n.length<2){$('name-err').textContent=t('nameErr');return}savedName=n;store.set('kado_name',n);$('name-err').textContent='';setScreen('s-mode')}
-function refreshSettings(){$('set-name').textContent=t('player')+': '+(savedName||'-');$('lang-btn').textContent=t('lang')+': '+t('langName');$('btn-sound').textContent=t('sound')+': '+t(soundOn?'on':'off');$('btn-vib').textContent=t('vib')+': '+t(vibOn?'on':'off')}
+function refreshSettings(){$('set-name').textContent=t('player')+': '+(savedName||'-');$('btn-sound').textContent=t('sound')+': '+t(soundOn?'on':'off');$('btn-vib').textContent=t('vib')+': '+t(vibOn?'on':'off')}
 function openSettings(){refreshSettings();setScreen('s-set')}
-function toggleLang(){lang=lang==='tr'?'en':'tr';store.set('kado_lang',lang);applyLang()}
 function toggleSetting(k){if(k==='sound'){soundOn=!soundOn;store.set('kado_sound',soundOn?'1':'0');beep(520,.1)}else{vibOn=!vibOn;store.set('kado_vib',vibOn?'1':'0');buzz(80)}refreshSettings()}
 
 // ---------- SHOP / ADS / DAILY GIFT ----------
 const hex=c=>'#'+c.toString(16).padStart(6,'0');
-function renderShop(){$('skin-grid').innerHTML=SKINS.map((s,i)=>{const o=owned.includes(i),bg=s.c<0?'conic-gradient(#f44,#fa0,#ee0,#4d4,#0dd,#44f,#d4d,#f44)':hex(s.c);const st=i===skin?'<b>'+t('equipped')+'</b>':o?'<b>'+t('select')+'</b>':'<span class="pr">'+IC.coin+s.p+'</span>';return '<div class="sk'+(i===skin?' sel':'')+'" onclick="pickSkin('+i+')"><i style="background:'+bg+'"></i>'+st+'</div>'}).join('')}
+const SKIN_CATEGORIES=['Rare','Epic','Majestic'];
+const SKIN_NAMES=['Cloud','Ocean','Forest','Amethyst','Sunset','Rose','Solar','Aurora'];
+const skinCategory=i=>i<3?'Rare':i<6?'Epic':'Majestic';
+let selectedSkinCategory='Rare';
+function selectSkinCategory(category){if(!SKIN_CATEGORIES.includes(category))return;selectedSkinCategory=category;renderShop()}
+function renderShop(){
+ document.querySelectorAll('.skin-tabs button').forEach(button=>button.setAttribute('aria-selected',String(button.textContent===selectedSkinCategory)));
+ $('skin-grid').setAttribute('aria-labelledby','skin-tab-'+selectedSkinCategory.toLowerCase());
+ $('skin-category-note').textContent=selectedSkinCategory==='Rare'?'Fresh colors for every run':selectedSkinCategory==='Epic'?'Stand out with bold colors':'Gold and shifting rainbow finishes';
+ $('skin-grid').innerHTML=SKINS.map((s,i)=>{
+  if(skinCategory(i)!==selectedSkinCategory)return '';
+  const o=owned.includes(i),bg=s.c<0?'conic-gradient(#f44,#fa0,#ee0,#4d4,#0dd,#44f,#d4d,#f44)':hex(s.c);
+  const st=i===skin?'<b>'+t('equipped')+'</b>':o?'<b>'+t('select')+'</b>':'<span class="pr">'+IC.coin+s.p+'</span>';
+  return '<button type="button" class="sk'+(i===skin?' sel':'')+'" onclick="pickSkin('+i+')" aria-label="'+SKIN_NAMES[i]+', '+skinCategory(i)+(i===skin?', equipped':o?', owned':', '+s.p+' gold')+'"><i style="background:'+bg+'"></i><span class="skin-name">'+SKIN_NAMES[i]+'</span>'+st+'</button>';
+ }).join('');
+}
 function pickSkin(i){const s=SKINS[i];if(!owned.includes(i)){if(coins<s.p){toast(t('poor'));beep(180,.2);return}addCoins(-s.p);owned.push(i);store.set('kado_owned',JSON.stringify(owned))}skin=i;store.set('kado_skin',String(i));applySkin();renderShop();beep(660,.1)}
 function openShop(){renderShop();setScreen('s-shop')}
 function showAd(onReward){ // TEST AD: replace with an AdMob rewarded ad (Capacitor plugin) before release
@@ -239,6 +296,7 @@ function showHost(){myName=savedName;updateLabel(playerLabel,myName,'#fff');setS
 function showJoin(){myName=savedName;updateLabel(playerLabel,myName,'#fff');$('join-status').textContent='';setScreen('s-join')}
 function backToStart(){if(peer){peer.destroy();peer=null}conn=null;isMulti=false;isHost=false;setScreen('s-multi')}
 function createRoom(){
+ if(!termsAccepted){setScreen('s-terms');return}
  const code=Math.random().toString(36).substring(2,6).toUpperCase();
  $('host-code').textContent=code;$('host-cap').textContent=t('players')+': 1/2';$('btn-start').style.display='none';$('host-status').textContent=t('opening');
  isMulti=true;isHost=true;if(peer)peer.destroy();
@@ -252,6 +310,7 @@ function createRoom(){
  });
 }
 function joinByCode(){
+ if(!termsAccepted){setScreen('s-terms');return}
  const code=$('join-code').value.trim().toUpperCase();
  if(code.length!==4){toast(t('badCode'));return}
  isMulti=true;isHost=false;round=0;$('join-status').textContent=t('connecting');
@@ -262,7 +321,7 @@ function joinByCode(){
 function setupConn(c){
  c.on('data',d=>{
   if(!d||typeof d!=='object')return;
-  if(d.type==='join'){oppName=cleanName(d.name)||t('rival');updateLabel(oppLabel,oppName,'#fde047');if(Number.isInteger(d.skin)&&d.skin>=0&&d.skin<SKINS.length){oppSkin=d.skin;applyOppSkin()}}
+  if(d.type==='join'){oppName=cleanName(d.name)||t('rival');refreshPlayerLabels();if(Number.isInteger(d.skin)&&d.skin>=0&&d.skin<SKINS.length){oppSkin=d.skin;applyOppSkin()}}
   else if(d.type==='start'){if(!isHost&&Number.isInteger(d.seed)&&Number.isInteger(d.round))startRound(d.seed,d.round)}
   else if(d.type==='sync'){
    if(!Number.isFinite(d.x)||!Number.isFinite(d.z)||!Number.isInteger(d.rd)||!['START','PLAYING','GAMEOVER'].includes(d.st))return;
@@ -274,7 +333,7 @@ function setupConn(c){
  });
  c.on('close',()=>toast(t('oppLeft'),5000));
 }
-function startRound(s,r){if(r<=round)return;round=r;seed=s;resetWorld();setScreen(null);state='PLAYING';if(isMulti){opp.position.set(0,0,0);oppX=0;oppZ=0;oppState='PLAYING'}else opp.position.set(0,-100,500)}
+function startRound(s,r){if(!termsAccepted){setScreen('s-terms');return}if(r<=round)return;round=r;seed=s;resetWorld();refreshPlayerLabels();setScreen(null);state='PLAYING';if(isMulti){opp.position.set(0,0,0);oppX=0;oppZ=0;oppState='PLAYING'}else opp.position.set(0,-100,500)}
 function startMultiplayer(){if(!isHost||!conn||!conn.open)return;const s=Math.floor(Math.random()*1e9);startRound(s,round+1);conn.send({type:'start',seed:s,round})}
 function startSolo(){isMulti=false;myName=savedName;updateLabel(playerLabel,myName,'#fff');startRound(Math.floor(Math.random()*1e9),round+1)}
 function playAgain(){if(!isMulti)startSolo();else if(isHost)startMultiplayer()}
@@ -285,7 +344,7 @@ function handleGameOver(name){
  $('fail-blame').textContent=t('mistake',name);
  const best=Math.max(score,+store.get('kado_best','0')||0);store.set('kado_best',String(best));
  $('score-line').textContent=t('gates')+': '+score+'     '+t('best')+': '+best;
- addCoins(runCoins);$('over-coins').textContent='+'+runCoins;
+ addCoins(runCoins);$('over-coins').textContent='+'+runCoins;$('over-gems').textContent='+'+runGems;
  const guest=isMulti&&!isHost,has=runCoins>0;
  $('btn-again').style.display=guest?'none':'flex';$('again-wait').style.display=guest?'block':'none';
  $('btn-claim').disabled=false;$('btn-claim').style.display=has?'flex':'none';$('wheel').style.display=has?'flex':'none';
@@ -296,10 +355,10 @@ function handleGameOver(name){
 const FACES=['smile','neutral','sad'],GATE_COLORS=[0xf05f7b,0x42b9e7,0xffcf45],LW=3.2,BND=LW*1.1,P=6.4,TL=512,GH=4.5,GW=LW*.95;
 const GAP0=2,GAP_STEP=.1,GAP_MIN=1.2,V0=36,V_STEP=1.2,V_MAX=50; // time between gates: 2.0s, 1.9s, 1.8s ... down to 1.2s; speed in units/second
 let scene,camera,renderer,trackTex,curbTex,trackM,curbL,curbR,ground,player,pBody,pLL,pRL,opp,oBody,oLL,oRL,playerLabel,oppLabel,pMat,oMat,faceMats={},wf={},frameMats,panelMats,pMats,gPillar,gTop,gPanel,gCard,bGeo,pGeo;
-let gates=[],boards=[],parts=[],deco=[],goldPickups=[];
-let goldBodyGeo,goldFaceGeo,goldRimMat,goldFaceMat;
+let gates=[],boards=[],parts=[],deco=[],goldPickups=[],gemPickups=[];
+let goldBodyGeo,goldFaceGeo,goldRimMat,goldFaceMat,gemFaceMat,gemRimMat;
 const MAX_LIVES=3;
-let state='START',speed=V0/60,loopCount=1,lives=MAX_LIVES,runTime=0,oRun=0,targetX=0,dragging=false,prevPX=0,spawned=0,curLoop=0,seqIdx=0,score=0,runCoins=0,lastSync=0,lastFrame=0;
+let state='START',speed=V0/60,loopCount=1,lives=MAX_LIVES,runTime=0,oRun=0,targetX=0,dragging=false,prevPX=0,spawned=0,curLoop=0,seqIdx=0,score=0,runCoins=0,runGems=0,lastSync=0,lastFrame=0;
 const loops=[];
 
 function canvasTex(w,h,draw,rep){const c=document.createElement('canvas');c.width=w;c.height=h;draw(c.getContext('2d'),w,h);const tx=new THREE.CanvasTexture(c);if(rep){tx.wrapS=tx.wrapT=THREE.RepeatWrapping;tx.repeat.set(rep[0],rep[1])}tx.anisotropy=4;return tx}
@@ -313,17 +372,23 @@ function drawFace(g,type,board){
  else{g.moveTo(160,310);g.lineTo(352,310)}
  g.stroke();
 }
-function makeLabel(text,color){const c=document.createElement('canvas');c.width=256;c.height=64;const tx=new THREE.CanvasTexture(c);const s=new THREE.Sprite(new THREE.SpriteMaterial({map:tx,depthTest:false}));s.scale.set(4,1,1);s.position.y=3.5;s.userData={c,tx};updateLabel(s,text,color);return s}
-function updateLabel(s,text,color){const g=s.userData.c.getContext('2d');g.clearRect(0,0,256,64);g.font="600 34px Fredoka,'Varela Round',sans-serif";g.textAlign='center';g.lineWidth=6;g.strokeStyle='rgba(0,0,0,.55)';g.strokeText(text,128,46);g.fillStyle=color;g.fillText(text,128,46);s.userData.tx.needsUpdate=true}
+function makeLabel(text,color){const c=document.createElement('canvas');c.width=384;c.height=128;const tx=new THREE.CanvasTexture(c);const s=new THREE.Sprite(new THREE.SpriteMaterial({map:tx,depthTest:false}));s.scale.set(3.6,1.2,1);s.position.y=3.25;s.userData={c,tx};updateLabel(s,text,color);return s}
+function updateLabel(s,text,color){
+ const g=s.userData.c.getContext('2d');g.clearRect(0,0,384,128);g.fillStyle=color;
+ g.beginPath();g.moveTo(173,6);g.lineTo(211,6);g.lineTo(192,34);g.closePath();g.fill();
+ g.font="600 37px Fredoka,'Varela Round',sans-serif";g.textAlign='center';g.lineWidth=6;g.strokeStyle='rgba(20,12,45,.75)';
+ g.strokeText(text,192,91,370);g.fillText(text,192,91,370);s.userData.color=color;s.userData.tx.needsUpdate=true;
+}
+function refreshPlayerLabels(){const own=isMulti&&!isHost?'#ffd36d':'#7ce8ff',other=isHost?'#ffd36d':'#7ce8ff';updateLabel(playerLabel,myName||savedName||t('you'),own);updateLabel(oppLabel,oppName||t('rival'),other)}
 function applySkin(){if(pMat)pMat.color.setHex(SKINS[skin].c<0?0xff4444:SKINS[skin].c)}
 function applyOppSkin(){if(oMat)oMat.color.setHex(SKINS[oppSkin].c<0?0xff4444:SKINS[oppSkin].c)}
-function scatter(m,z,cloud){m.position.x=(Math.random()<.5?-1:1)*((cloud?14:9)+Math.random()*(cloud?50:28));m.userData.y=cloud?16+Math.random()*10:.6+Math.random()*9;m.position.y=m.userData.y;m.position.z=z}
+function scatter(m,z,cloud){m.position.x=(Math.random()<.5?-1:1)*((cloud?16:12)+Math.random()*(cloud?40:22));m.userData.y=cloud?12+Math.random()*13:3+Math.random()*7;m.position.y=m.userData.y;m.position.z=z}
 
 // Deterministic levels: same seed + same round number = same faces on every device
 function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let x=Math.imul(a^a>>>15,1|a);x=x+Math.imul(x^x>>>7,61|x)^x;return((x^x>>>14)>>>0)/4294967296}}
 function getLoopData(k){const rng=mulberry32((seed+k*7919)>>>0),sequence=[],rows=[];for(let i=0;i<3;i++){sequence.push(FACES[Math.floor(rng()*3)]);const r=[...FACES];for(let j=2;j>0;j--){const q=Math.floor(rng()*(j+1));[r[j],r[q]]=[r[q],r[j]]}rows.push(r)}return{sequence,gates:rows}}
 function loopInfo(k){while(loops.length<=k){const i=loops.length,start=i?loops[i-1].end:0,v=Math.min(V_MAX,V0+V_STEP*i),gap=n=>Math.max(GAP_MIN,GAP0-GAP_STEP*(3*i+n))*v,board=start-(i?1.5:3)*v,g1=board-gap(0),g2=g1-gap(1),g3=g2-gap(2);loops.push({start,v,board,g:[g1,g2,g3],end:g3})}return loops[k]}
-function spawnLoop(k){const d=getLoopData(k),L=loopInfo(k);spawnBoard(L.board,d);L.g.forEach((z,j)=>spawnGateRow(z,j,d));spawnGold(k)}
+function spawnLoop(k){const d=getLoopData(k),L=loopInfo(k);spawnBoard(L.board,d);L.g.forEach((z,j)=>spawnGateRow(z,j,d));spawnGold(k);spawnGem(k)}
 function goldLayout(k){
  // Independent random stream keeps the existing emotion sequences intact.
  const rng=mulberry32((seed^Math.imul(k+1,2654435761))>>>0),L=loopInfo(k),bounds=[L.start,L.board,...L.g],positions=[];
@@ -352,6 +417,26 @@ function updateGold(prevZ,now){
   }else if(pickup.position.z>player.position.z+4){scene.remove(pickup);goldPickups.splice(i,1)}
  }
 }
+// One diamond in one seeded level of each four-level block, never a trail.
+function gemLayout(k){
+ const block=Math.floor(k/4),rng=mulberry32((seed^Math.imul(block+1,1597334677))>>>0);
+ if(k!==block*4+1+Math.floor(rng()*3))return null;
+ const L=loopInfo(k);return{x:(Math.floor(rng()*3)-1)*LW,z:L.board+(L.g[0]-L.board)*.8};
+}
+function spawnGem(k){
+ const pos=gemLayout(k);if(!pos)return;
+ const pickup=new THREE.Group();pickup.name='track-gem';pickup.position.set(pos.x,1.35,pos.z);
+ const rim=new THREE.Mesh(goldBodyGeo,gemRimMat),front=new THREE.Mesh(goldFaceGeo,gemFaceMat),back=new THREE.Mesh(goldFaceGeo,gemFaceMat);
+ front.position.z=.09;back.position.z=-.09;back.rotation.y=Math.PI;pickup.add(rim,front,back);scene.add(pickup);gemPickups.push(pickup);
+}
+function updateGems(prevZ,now){
+ for(let i=gemPickups.length-1;i>=0;i--){
+  const p=gemPickups[i];p.rotation.y=Math.sin(now*.002)*.55;p.position.y=1.35+Math.sin(now*.004)*.14;
+  if(p.position.z<=prevZ+.65&&p.position.z>=player.position.z-.65&&Math.abs(p.position.x-player.position.x)<.75){
+   scene.remove(p);gemPickups.splice(i,1);runGems++;gems++;store.set('kado_gems',String(gems));updateHud();beep(1320,.1);toast('+1 GEM',1200);
+  }else if(p.position.z>player.position.z+4){scene.remove(p);gemPickups.splice(i,1)}
+ }
+}
 function spawnBoard(z,data){
  const tx=canvasTex(1024,512,g=>{
   const gr=g.createLinearGradient(0,0,0,512);gr.addColorStop(0,'#8b5cf6');gr.addColorStop(1,'#4c1d95');
@@ -376,28 +461,28 @@ function spawnGateRow(z,j,data){
  scene.add(row);gates.push(row);
 }
 function burst(x,z){for(let i=0;i<16;i++){const p=new THREE.Mesh(pGeo,pMats[i%5]);p.position.set(x+(Math.random()-.5)*3,2,z);p.userData={vx:(Math.random()-.5)*.4,vy:Math.random()*.4+.2,vz:(Math.random()-.5)*.4,life:1};scene.add(p);parts.push(p)}}
-function clearWorld(){gates.forEach(g=>scene.remove(g));gates=[];boards.forEach(killBoard);boards=[];parts.forEach(p=>scene.remove(p));parts=[];goldPickups.forEach(p=>scene.remove(p));goldPickups=[]}
-function resetWorld(){clearWorld();loops.length=0;spawned=0;curLoop=0;seqIdx=0;score=0;runCoins=0;lives=MAX_LIVES;loopCount=1;speed=V0/60;targetX=0;player.position.set(0,0,0);pBody.rotation.set(0,0,0);updateBar();updateHud()}
+function clearWorld(){gates.forEach(g=>scene.remove(g));gates=[];boards.forEach(killBoard);boards=[];parts.forEach(p=>scene.remove(p));parts=[];goldPickups.forEach(p=>scene.remove(p));goldPickups=[];gemPickups.forEach(p=>scene.remove(p));gemPickups=[]}
+function resetWorld(){clearWorld();loops.length=0;spawned=0;curLoop=0;seqIdx=0;score=0;runCoins=0;runGems=0;lives=MAX_LIVES;loopCount=1;speed=V0/60;targetX=0;player.position.set(0,0,0);pBody.rotation.set(0,0,0);updateBar();updateHud()}
 
 function poseRunner(body,left,right,phase,lean=0){
  const stride=Math.sin(phase);
- body.position.y=.10+Math.abs(Math.cos(phase))*.14;
- body.rotation.set(-.18+Math.cos(phase*2)*.035,stride*.10,lean+stride*.045);
+ body.position.y=.045+Math.abs(Math.cos(phase))*.095;
+ body.rotation.set(-.14+Math.cos(phase*2)*.025,stride*.08,lean+stride*.035);
  [left,right].forEach((leg,i)=>{
   const step=i===0?stride:-stride;
-  leg.rotation.x=step*.85;
-  leg.userData.knee.rotation.x=-.18-Math.max(0,-step)*1.15;
+  leg.rotation.x=step*.78;
+  leg.userData.knee.rotation.x=-.12-Math.max(0,-step)*1.05;
  });
- body.userData.arms[0].rotation.set(-stride*.85,0,-.12);
- body.userData.arms[1].rotation.set(stride*.85,0,.12);
+ body.userData.arms[0].rotation.set(-stride*.80,0,-.25);
+ body.userData.arms[1].rotation.set(stride*.80,0,.25);
 }
 
 function init(){
  scene=new THREE.Scene();
- scene.background=canvasTex(2,256,(g,w,h)=>{const gr=g.createLinearGradient(0,0,0,h);gr.addColorStop(0,'#35215f');gr.addColorStop(.38,'#75519b');gr.addColorStop(.68,'#e18eb4');gr.addColorStop(1,'#ffd2a5');g.fillStyle=gr;g.fillRect(0,0,w,h)});
+ scene.background=null;
  scene.fog=new THREE.Fog(0xc48bb9,80,270);
  camera=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,.1,400);camera.position.set(0,7,14);
- renderer=new THREE.WebGLRenderer({antialias:true});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,2));$('gc').appendChild(renderer.domElement);
+ renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});renderer.setClearColor(0x000000,0);renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,2));$('gc').appendChild(renderer.domElement);
  scene.add(new THREE.HemisphereLight(0xffffff,0x9bb0ff,.95));
  const dl=new THREE.DirectionalLight(0xffffff,.55);dl.position.set(-10,25,15);scene.add(dl);
 
@@ -409,54 +494,67 @@ function init(){
  trackM=flat(LW*3,new THREE.MeshBasicMaterial({map:trackTex}),0);
  curbL=flat(1.2,new THREE.MeshBasicMaterial({map:curbTex}),.03);curbL.position.x=-(LW*1.5+.6);
  curbR=flat(1.2,new THREE.MeshBasicMaterial({map:curbTex}),.03);curbR.position.x=LW*1.5+.6;
- ground=flat(300,new THREE.MeshBasicMaterial({color:0x735a9f}),-.05);
+ ground=flat(300,new THREE.MeshBasicMaterial({color:0x735a9f,transparent:true,opacity:0,depthWrite:false}),-.05);
 
- // living background: floating shapes and clouds that drift past
- // Pastel sky scenery: soft clouds, tiny floating gardens and drifting stars.
- const sphereGeo=new THREE.SphereGeometry(1,18,14);
- const cloudMats=[0xffe4ed,0xffd1c4,0xdacafa].map(c=>new THREE.MeshLambertMaterial({color:c}));
- for(let i=0;i<13;i++){
+ // Smooth shared scenery meshes complement the painted floating-island sky.
+ const sphereGeo=new THREE.SphereGeometry(1,28,18);
+ const cloudMats=[0xffe7dc,0xf4d5ed,0xd9d0f5].map(c=>new THREE.MeshStandardMaterial({color:c,roughness:1}));
+ for(let i=0;i<10;i++){
   const cloud=new THREE.Group();
-  [[-1.4,0,.45,1.2],[0,.35,0,1.55],[1.35,0,.35,1.15],[-.35,-.25,-.15,1.25],[.8,-.22,-.1,1.15]].forEach((p,j)=>{const puff=new THREE.Mesh(sphereGeo,cloudMats[(i+j)%cloudMats.length]);puff.position.set(p[0],p[1],p[2]);puff.scale.set(p[3],p[3]*.8,p[3]*.7);cloud.add(puff)});
-  cloud.scale.set(1.5,1,.8);scatter(cloud,25-Math.random()*380,true);cloud.userData.cloud=1;cloud.userData.ph=Math.random()*6;scene.add(cloud);deco.push(cloud);
+  [[-1.5,0,.25,1.25],[0,.45,0,1.65],[1.5,.05,.15,1.2],[-.5,-.25,.5,1.4],[.9,-.22,.35,1.3]].forEach(p=>{const puff=new THREE.Mesh(sphereGeo,cloudMats[i%3]);puff.position.set(p[0],p[1],p[2]);puff.scale.set(p[3],p[3]*.85,p[3]*.8);cloud.add(puff)});
+  cloud.scale.set(1.8,1.05,1);scatter(cloud,25-Math.random()*380,true);cloud.userData.cloud=1;cloud.userData.kind='cloud';cloud.userData.ph=Math.random()*6;scene.add(cloud);deco.push(cloud);
  }
- const islandTop=new THREE.MeshStandardMaterial({color:0x79c98a,roughness:.85}),islandRock=new THREE.MeshStandardMaterial({color:0x8569b0,roughness:.9});
- const treeMats=[0x65b97a,0xffc17c,0xff9dc4].map(c=>new THREE.MeshLambertMaterial({color:c}));
- for(let i=0;i<15;i++){
-  const island=new THREE.Group(),top=new THREE.Mesh(new THREE.CylinderGeometry(1.3,1.05,.35,9),islandTop),rock=new THREE.Mesh(new THREE.ConeGeometry(1.05,2.2,8),islandRock);
-  top.position.y=.35;rock.position.y=-.85;rock.rotation.x=Math.PI;island.add(top,rock);
-  const tree=new THREE.Mesh(new THREE.ConeGeometry(.28,.85,7),treeMats[i%treeMats.length]);tree.position.set(i%2?.45:-.4,.85,0);island.add(tree);
-  island.scale.setScalar(.55+Math.random()*.6);scatter(island,20-Math.random()*400,false);island.userData.ph=Math.random()*6;scene.add(island);deco.push(island);
+ const islandTop=new THREE.MeshStandardMaterial({color:0x83b898,roughness:1}),islandRock=new THREE.MeshStandardMaterial({color:0x9b7d9c,roughness:1});
+ const leafMats=[0x8ba9a0,0xe2a6bb,0xb49ac7].map(c=>new THREE.MeshStandardMaterial({color:c,roughness:1}));
+ const barkMat=new THREE.MeshStandardMaterial({color:0x816477,roughness:1});
+ const rockGeo=new THREE.LatheGeometry([new THREE.Vector2(.04,-1.9),new THREE.Vector2(.32,-1.6),new THREE.Vector2(.65,-1.1),new THREE.Vector2(1.05,-.5),new THREE.Vector2(1.3,-.05),new THREE.Vector2(1.22,.3),new THREE.Vector2(.8,.4),new THREE.Vector2(0,.4)],32);
+ const rockPos=rockGeo.attributes.position;
+ for(let i=0;i<rockPos.count;i++){const x=rockPos.getX(i),y=rockPos.getY(i),z=rockPos.getZ(i),angle=Math.atan2(z,x),shape=1+.09*Math.sin(angle*3+y)+.045*Math.cos(angle*5-y*2);rockPos.setXYZ(i,x*shape,y,z*shape)}
+ rockGeo.computeVertexNormals();
+ const trunkGeo=new THREE.TubeGeometry(new THREE.CatmullRomCurve3([new THREE.Vector3(0,.4,0),new THREE.Vector3(-.08,.85,0),new THREE.Vector3(.12,1.25,0),new THREE.Vector3(.3,1.5,0)]),10,.085,8,false);
+ const waterfallMat=new THREE.MeshBasicMaterial({color:0xc0f3ff,transparent:true,opacity:.62,side:THREE.DoubleSide,depthWrite:false});
+ const waterfallGeo=new THREE.PlaneGeometry(.14,2.2);
+ for(let i=0;i<10;i++){
+  const island=new THREE.Group(),top=new THREE.Mesh(sphereGeo,islandTop),rock=new THREE.Mesh(rockGeo,islandRock);
+  top.position.y=.36;top.scale.set(1.28,.20,1.10);island.add(top,rock);
+  const tree=new THREE.Group();tree.add(new THREE.Mesh(trunkGeo,barkMat));
+  [[-.22,1.47,.06,.45],[.3,1.63,0,.58],[.7,1.5,.04,.43]].forEach(p=>{const crown=new THREE.Mesh(sphereGeo,leafMats[i%3]);crown.position.set(p[0],p[1],p[2]);crown.scale.set(p[3]*1.2,p[3]*.70,p[3]);tree.add(crown)});
+  tree.position.set(i%2?.3:-.3,0,-.2);island.add(tree);
+  if(i%3===0){const waterfall=new THREE.Mesh(waterfallGeo,waterfallMat);waterfall.position.set(.57,-.65,1.02);island.add(waterfall)}
+  island.scale.setScalar(.9+Math.random()*.7);scatter(island,20-Math.random()*400,false);island.userData.kind='island';island.userData.ph=Math.random()*6;scene.add(island);deco.push(island);
  }
- const starMats=[0xfff1b8,0xffffff,0xf8c7ed].map(c=>new THREE.MeshBasicMaterial({color:c}));
- for(let i=0;i<46;i++){const star=new THREE.Mesh(new THREE.SphereGeometry(.045+Math.random()*.055,8,6),starMats[i%starMats.length]);scatter(star,20-Math.random()*420,true);star.userData.cloud=1;star.userData.ph=Math.random()*6;scene.add(star);deco.push(star)}
+ const starTexture=canvasTex(128,128,g=>{
+  const glow=g.createRadialGradient(64,64,0,64,64,60);glow.addColorStop(0,'#fffbe5');glow.addColorStop(.12,'#fff8df');glow.addColorStop(.35,'rgba(255,221,197,.4)');glow.addColorStop(1,'rgba(255,221,197,0)');g.fillStyle=glow;g.fillRect(0,0,128,128);
+  g.fillStyle='rgba(255,255,245,.9)';g.beginPath();g.moveTo(64,29);g.quadraticCurveTo(67,61,86,64);g.quadraticCurveTo(67,67,64,99);g.quadraticCurveTo(61,67,42,64);g.quadraticCurveTo(61,61,64,29);g.fill();
+ });
+ for(let i=0;i<36;i++){const star=new THREE.Sprite(new THREE.SpriteMaterial({map:starTexture,color:i%3===0?0xffdce8:0xffffff,transparent:true,depthWrite:false,fog:false})),size=.35+Math.random()*.35;star.scale.setScalar(size);scatter(star,20-Math.random()*420,true);star.userData.cloud=1;star.userData.kind='star';star.userData.baseScale=size;star.userData.ph=Math.random()*6;scene.add(star);deco.push(star)}
 
  // Faceless mascot with articulated knees and a compact rounded head.
  const mascotSphere=new THREE.SphereGeometry(1,32,24);
  const mk=c=>{const root=new THREE.Group(),body=new THREE.Group(),mat=new THREE.MeshStandardMaterial({color:c,roughness:.62,metalness:0});
   const oval=(parent,x,y,z,sx,sy,sz)=>{const mesh=new THREE.Mesh(mascotSphere,mat);mesh.position.set(x,y,z);mesh.scale.set(sx,sy,sz);parent.add(mesh);return mesh};
-  oval(body,0,1.32,0,.54,.66,.38);
-  oval(body,0,2.16,0,.49,.51,.46);
+  oval(body,0,1.31,0,.35,.57,.25);
+  oval(body,0,2.10,0,.43,.45,.41);
   const arms=[];
   for(const side of [-1,1]){
-   const arm=new THREE.Group();arm.position.set(side*.46,1.8,0);
-   const curve=new THREE.CatmullRomCurve3([new THREE.Vector3(0,0,0),new THREE.Vector3(side*.18,-.34,.08),new THREE.Vector3(side*.25,-.58,-.20)]);
-   arm.add(new THREE.Mesh(new THREE.TubeGeometry(curve,12,.155,12,false),mat));
-   oval(arm,0,0,0,.17,.18,.17);
-   oval(arm,side*.25,-.64,-.26,.18,.20,.145);
-   oval(arm,side*.12,-.63,-.30,.075,.12,.08);
+   const arm=new THREE.Group();arm.position.set(side*.37,1.72,0);
+   const curve=new THREE.CatmullRomCurve3([new THREE.Vector3(0,0,0),new THREE.Vector3(side*.22,-.25,.04),new THREE.Vector3(side*.26,-.42,-.22)]);
+   arm.add(new THREE.Mesh(new THREE.TubeGeometry(curve,12,.105,10,false),mat));
+   oval(arm,0,0,0,.12,.13,.12);
+   oval(arm,side*.26,-.47,-.27,.125,.145,.11);
+   oval(arm,side*.17,-.46,-.31,.05,.085,.055);
    body.add(arm);arms.push(arm);
   }
   body.userData.arms=arms;
   const leg=side=>{
-   const pivot=new THREE.Group(),knee=new THREE.Group();pivot.position.set(side*.25,.90,0);
-   oval(pivot,0,-.17,0,.23,.24,.23);
-   knee.position.y=-.34;oval(knee,0,0,0,.205,.205,.205);
-   oval(knee,0,-.17,0,.20,.24,.20);oval(knee,0,-.39,-.09,.245,.14,.31);
+   const pivot=new THREE.Group(),knee=new THREE.Group();pivot.position.set(side*.18,.86,0);
+   oval(pivot,0,-.17,0,.155,.23,.16);
+   knee.position.y=-.34;oval(knee,0,0,0,.14,.14,.14);
+   oval(knee,0,-.17,0,.135,.23,.14);oval(knee,0,-.38,-.07,.16,.12,.24);
    pivot.add(knee);pivot.userData.knee=knee;body.add(pivot);return pivot;
   };
   const l=leg(-1),r=leg(1);root.add(body);
-  const sh=new THREE.Mesh(new THREE.CircleGeometry(.85,24),new THREE.MeshBasicMaterial({color:0x51446e,transparent:true,opacity:.2}));sh.rotation.x=-Math.PI/2;sh.position.y=.04;root.add(sh);
+  const sh=new THREE.Mesh(new THREE.CircleGeometry(.65,32),new THREE.MeshBasicMaterial({color:0x51446e,transparent:true,opacity:.18}));sh.rotation.x=-Math.PI/2;sh.position.y=.04;root.add(sh);
   scene.add(root);return{root,body,l,r,mat}};
  const a=mk(0xef4444);player=a.root;pBody=a.body;pLL=a.l;pRL=a.r;pMat=a.mat;
  const b=mk(0x0ea5e9);opp=b.root;oBody=b.body;oLL=b.l;oRL=b.r;oMat=b.mat;opp.position.set(0,-100,500);
@@ -475,6 +573,8 @@ function init(){
  goldFaceGeo=new THREE.PlaneGeometry(1.12,1.12);
  goldRimMat=new THREE.MeshStandardMaterial({color:0xe8ad10,roughness:.3,metalness:.25});
  goldFaceMat=new THREE.MeshBasicMaterial({map:new THREE.TextureLoader().load('assets/gold.svg'),transparent:true,alphaTest:.05});
+ gemRimMat=new THREE.MeshStandardMaterial({color:0x2196c9,roughness:.26,metalness:.2});
+ gemFaceMat=new THREE.MeshBasicMaterial({map:new THREE.TextureLoader().load('assets/gem.svg'),transparent:true,alphaTest:.05});
 
  addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
  const dn=e=>{if(state==='PLAYING'){dragging=true;prevPX=e.touches?e.touches[0].clientX:e.clientX}};
@@ -495,6 +595,7 @@ function animate(){
   player.position.x+=(targetX-player.position.x)*(1-Math.pow(.8,f));
   while(player.position.z-loopInfo(spawned).board<320)spawnLoop(spawned++);
   updateGold(prevZ,nt);
+  updateGems(prevZ,nt);
   speed=loopInfo(curLoop).v/60;
   for(const row of gates){
    if(row.userData.passed||row.position.z>prevZ+1||row.position.z<player.position.z-1)continue;
@@ -505,7 +606,7 @@ function animate(){
     lives=Math.max(0,lives-1);row.userData.passed=true;row.position.y-=100;
     seqIdx=Math.max(seqIdx,row.userData.seq+1);updateBar();updateHud();beep(180,.2);
     if(lives===0){handleGameOver(myName);if(isMulti&&conn&&conn.open)conn.send({type:'gameover',blame:myName,rd:round});break}
-    toast(lang==='tr'?'Hata! Kalan can: '+lives:'Miss! '+lives+' lives left');
+    toast('Miss! '+lives+' lives left');
    }
   }
   let idx=curLoop;while(player.position.z<loopInfo(idx).end)idx++;
@@ -522,7 +623,12 @@ function animate(){
  const pz=player.position.z;
  trackM.position.z=curbL.position.z=curbR.position.z=ground.position.z=pz-170;
  const off=(-pz/P)%1;trackTex.offset.y=off;curbTex.offset.y=off;
- for(const d of deco){if(d.position.z>pz+30)scatter(d,pz-300-Math.random()*60,d.userData.cloud);d.rotation.y+=.01*f;if(!d.userData.cloud){d.rotation.x+=.006*f;d.position.y=d.userData.y+Math.sin(nt*.002+d.userData.ph)*.5}}
+ for(const d of deco){
+  if(d.position.z>pz+30)scatter(d,pz-300-Math.random()*60,d.userData.cloud);
+  const wave=Math.sin(nt*.001+d.userData.ph);
+  if(d.userData.kind==='star'){d.material.opacity=.55+wave*.3;d.scale.setScalar(d.userData.baseScale*(.9+wave*.1))}
+  else{d.position.y=d.userData.y+wave*(d.userData.kind==='island'?.15:.08);if(d.userData.kind==='island')d.rotation.y=wave*.05}
+ }
  const hue=(nt/2500)%1;if(SKINS[skin].c<0)pMat.color.setHSL(hue,.85,.55);if(isMulti&&SKINS[oppSkin].c<0)oMat.color.setHSL(hue,.85,.55);
 
  if(isMulti&&conn&&conn.open&&nt-lastSync>33){lastSync=nt;conn.send({type:'sync',x:player.position.x,z:player.position.z,st:state,rd:round,sd:seed})}
@@ -541,7 +647,7 @@ function animate(){
  renderer.render(scene,camera);
 }
 
-Object.assign(window,{setScreen,onPlay,saveName,startSolo,showHost,showJoin,backToStart,startMultiplayer,joinByCode,openSettings,toggleLang,toggleSetting,openShop,pickSkin,watchAd50,openDaily,claimGift,playAgain,leaveMenu,claimWheel});
+Object.assign(window,{setScreen,onPlay,saveName,startSolo,showHost,showJoin,backToStart,startMultiplayer,joinByCode,openSettings,toggleSetting,openShop,selectSkinCategory,pickSkin,watchAd50,openDaily,claimGift,playAgain,leaveMenu,claimWheel,acceptTerms});
 init();
 addCoins(0);applyLang();
 animate();
